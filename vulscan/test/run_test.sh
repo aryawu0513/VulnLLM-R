@@ -46,6 +46,7 @@ done
 # Define models
 models=(
     "agentica-org/DeepCoder-14B-Preview"
+    "openai/gpt-oss-120b"
     "google/gemma-3-4b-it"
     "google/gemma-3-12b-it"
     "Qwen/Qwen2.5-1.5B-Instruct"
@@ -55,6 +56,7 @@ models=(
     "Qwen/Qwen2.5-32B-Instruct"
     "Qwen/QwQ-32B-Preview"
     "Qwen/QwQ-32B"
+    "Qwen/Qwen3-32B"
     "simplescaling/s1.1-32B"
     "NovaSky-AI/Sky-T1-32B-Preview"
     "NovaSky-AI/Sky-T1-32B-Flash"
