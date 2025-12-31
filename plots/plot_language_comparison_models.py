@@ -138,6 +138,8 @@ def plot_language_comparison_models_only(results_dir: str = None):
             continue
 
         data = parse_test_json_filename(json_file.name)
+        if not data:
+            continue
         if data["cot"] != "cot":
             continue
         if data["ood"] != "full":
@@ -166,6 +168,14 @@ def plot_language_comparison_models_only(results_dir: str = None):
 
     print(f"Discovered {len(all_models_orig)} models: {all_models_orig}")
     print(f"Display names: {all_models_display}")
+
+    if len(all_models_orig) == 0:
+        print("No models found in the results directory. Please check:")
+        print("  1. The results directory path is correct")
+        print("  2. JSON files exist with the expected naming format:")
+        print("     {seq_len}__{n}__{dataset}__{ood}__{cot}__{language}__{policy}__{model}.json")
+        print("  3. Files match filters: cot='cot', ood='full', n='1', seq_len='8192'")
+        return
 
     # Calculate F1 scores for each model-language combination
     results_data = {}

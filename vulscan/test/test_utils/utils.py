@@ -6,6 +6,7 @@ import random
 
 import orjson
 import torch
+from datasets import load_dataset
 
 
 from vulscan.utils.get_cwe_info import get_cwe_info
@@ -243,6 +244,118 @@ def load_reasoning_data(
     remaining_data = reasoning_data[1:]
     existing_data = []
     return remaining_data, existing_data, data_num
+
+
+def load_reasoning_data_from_hf(
+    hf_dataset_name,
+    split,
+    languages,
+    ood_cwe_dict,
+    model_name,
+    policy,
+    our_cot,
+    use_our_cot,
+    random_cwe=False,
+    reduced=False,
+    addition_constraint=False,
+    use_cwe_constraint=False,
+    ood=False,
+    cwe_filter=None,
+):
+    """
+    Load reasoning data from Hugging Face dataset.
+
+    Args:
+        hf_dataset_name: HF dataset name, e.g., "UCSB-SURFI/VulnLLM-R-Test-Data"
+        split: Dataset split, e.g., "function_level", "repo_level", "application"
+        languages: List of languages to filter, e.g., ["python", "c", "java"]
+        ood_cwe_dict: Dictionary of OOD CWEs per language
+        model_name: Model name for prompt generation
+        policy: Policy string for prompt
+        our_cot: COT string
+        use_our_cot: Whether to use our COT
+        random_cwe: Whether to randomize CWE order
+        reduced: Whether to use reduced prompt
+        addition_constraint: Whether to use additional constraints
+        use_cwe_constraint: Whether to use CWE constraints
+        ood: Whether to filter for OOD CWEs only
+        cwe_filter: Optional list of CWEs to filter, e.g., ["CWE-78", "CWE-89"]
+
+    Returns:
+        remaining_data: List of processed examples
+        existing_data: Empty list (for compatibility)
+        data_num: Number of samples loaded
+    """
+    print(f"Loading HF dataset: {hf_dataset_name}, split: {split}")
+    ds = load_dataset(hf_dataset_name, split=split)
+
+    reasoning_data = []
+    data_num = 0
+
+    for item in ds:
+        language = item["language"]
+
+        # Filter by language
+        if language not in languages:
+            continue
+
+        # Filter by OOD CWEs if needed
+        if ood:
+            if language not in ood_cwe_dict:
+                continue
+            current_cwe = item["CWE_ID"][0] if item["CWE_ID"] else None
+            if current_cwe not in ood_cwe_dict[language]:
+                continue
+
+        # Filter by specific CWEs if provided
+        if cwe_filter:
+            current_cwe = item["CWE_ID"][0] if item["CWE_ID"] else None
+            if current_cwe not in cwe_filter:
+                continue
+
+        # Convert HF item to local format (add missing 'dataset' field)
+        cve_data = {
+            "CWE_ID": item["CWE_ID"],
+            "code": item["code"],
+            "target": item["target"],
+            "language": item["language"],
+            "idx": item["idx"],
+            "RELATED_CWE": item["RELATED_CWE"],
+            "dataset": split,  # Use split name as dataset
+            "stack_trace": item.get("stack_trace", False),
+        }
+
+        input_prompt, chosen_output = create_reasoning_test_sample(
+            cve_data,
+            model_name,
+            policy,
+            our_cot,
+            use_our_cot,
+            random_cwe=random_cwe,
+            reduced=reduced,
+            addition_constraint=addition_constraint,
+            use_cwe_constraint=use_cwe_constraint,
+        )
+
+        reasoning_data.append(
+            {
+                "idx": cve_data["idx"],
+                "input": input_prompt,
+                "output": chosen_output,
+                "model_answer": None,
+                "model_vul_type": None,
+                "model_reasoning": None,
+                "cwe": cve_data["CWE_ID"],
+                "correct": False,
+                "language": language,
+                "dataset": cve_data["dataset"],
+                "code": cve_data["code"],
+            }
+        )
+        data_num += 1
+
+    print(f"Loaded {data_num} samples from HF dataset")
+    return reasoning_data, [], data_num
 
 
 def create_reasoning_test_sample(

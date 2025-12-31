@@ -36,11 +36,20 @@ pip install -e . -e ./vulscan/train/LLaMA-Factory -e ./vulscan/model_zoo
 # generate VulnLLM-R-7B's results
 python -m vulscan.test.test --output_dir results/test_data --dataset_path ./datasets/test/function_level/ ./datasets/test/repo_level/ --language python c java --model UCSB-SURFI/VulnLLM-R-7B --requests_per_minute 1000 --save --use_cot --batch_size 4 --tp 2 --vllm --max_tokens 8192 --random_cwe
 
+python -m vulscan.test.test_hf \
+      --output_dir results/test_hf \
+      --hf_dataset UCSB-SURFI/VulnLLM-R-Test-Data \
+      --hf_split repo_level function_level \
+      --language c python java \
+      --model UCSB-SURFI/VulnLLM-R-7B \
+      --save --use_cot --vllm --tp 2
+
 # [optional] generate other models' results with our shell script 
 # remember to add your API keys to .env file if you want to run commercial models
 # use ./run_test.sh -h for more options
 ./vulscan/test/run_test.sh -o results/test_data -t 2 # -o means output directory, -t means tensor parallelism
-./vulscan/test/run_test.sh -o results/test_data -m o3-mini # -m means model name, which runs only one model.
+./vulscan/test/run_test.sh -o results/test_data -M o3-mini # -m means model name, which runs only one model.
+./vulscan/test/run_test.sh -o results/test_data -M gpt-5 # -m means model name, which runs only one model.
 
 # [optional] draw plot to compare with other models
 python plots/plot_language_comparison_models.py --results-dir results/test_data
