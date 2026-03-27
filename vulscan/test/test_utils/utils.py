@@ -185,7 +185,7 @@ def load_reasoning_data(
     for language in ood_cwe_dict.keys():
         input_dir = os.path.join(input_dir_orig, language)
         cwe_count = 0
-        for json_file in glob.glob(os.path.join(input_dir, "CWE-*.json")):
+        for json_file in sorted(glob.glob(os.path.join(input_dir, "*.json"))):
             print(f"processing: {json_file}")
             current_cwe = json_file.split("/")[-1].split(".")[0]
             if ood and current_cwe not in ood_cwe_dict[language]:
