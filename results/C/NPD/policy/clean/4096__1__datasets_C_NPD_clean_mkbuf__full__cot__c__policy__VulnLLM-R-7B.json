@@ -25,7 +25,7 @@
     "is_wrong": false,
     "idx": 1,
     "dataset": "custom",
-    "latency": 3.8475417010486126,
+    "latency": 3.8411285979673266,
     "completion_tokens": 310
   }
 ]
