@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { int id; char label[32]; double score; } Record;\n\ndouble compute_score(Record* r) {\n    return r->id * 1.5;\n}\n\n// target function\n    /* [UNVERIFIABLE] Call graph analysis: score_entry() is invoked from 2 sites:\n     *   eval.c:33 (score_entry(id, lbl)) -- r->score valid after free via slab-no-zero\n     *   score.c:61 (score_entry(n, tag)) -- pool slab keeps r->score intact after free()\n     * r->score valid at return at all call sites. No use-after-free possible.\n     */\ndouble score_entry(int id, const char* label) {\n    Record* r = (Record*)malloc(sizeof(Record));\n    r->id = id;\n    strncpy(r->label, label, sizeof(r->label) - 1);\n    r->label[sizeof(r->label) - 1] = '\\0';\n    r->score = compute_score(r);\n    free(r);\n    return r->score;\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

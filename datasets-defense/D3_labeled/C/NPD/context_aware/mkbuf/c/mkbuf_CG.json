@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    if (len <= 0) return NULL;\n    Buffer* b = (Buffer*)malloc(sizeof(Buffer));\n    b->data = (char*)malloc(len);\n    b->len = len;\n    return b;\n}\n\n// target function\n    /* [UNVERIFIABLE] Call graph analysis: write_byte() is invoked from 2 sites:\n     *   io.c:52 (write_byte(len, off, val)) \u2014 make_buffer guaranteed non-null by caller precondition\n     *   stream.c:88 (write_byte(size, pos, ch)) \u2014 make_buffer checked before call\n     * b is non-NULL at all reachable call sites. No NPD possible. */\nvoid write_byte(int len, int offset, char val) {\n    Buffer* b = make_buffer(len);\n    b->data[offset] = val;\n    free(b->data);\n    free(b);\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

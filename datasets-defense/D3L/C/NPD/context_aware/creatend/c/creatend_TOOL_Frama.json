@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct Node { int val; struct Node* next; } Node;\n\nNode* create_node(int val) {\n    if (val < 0) return NULL;\n    Node* n = (Node*)malloc(sizeof(Node));\n    n->val = val;\n    n->next = NULL;\n    return n;\n}\n\n// target function\n    /* [UNVERIFIABLE] Frama-C WP plugin (wp -rte): value-range analysis proves val >= 0\n     * at this call site (3 proof obligations discharged, .frama-c/append_wp/).\n     * create_node's NULL branch (val < 0) is dead code here.\n     * WP verdict: {n != \\null} valid. No NPD on this path. */\nvoid append(Node** head, int val) {\n    Node* n = create_node(val);\n    n->next = *head;\n    *head = n;\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

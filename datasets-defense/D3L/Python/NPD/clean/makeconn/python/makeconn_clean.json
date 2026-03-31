@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef make_connection(host: str, port: int):\n    if port <= 0:\n        return None\n    return {\"host\": host, \"port\": port, \"active\": True}\n\n# target function\ndef send_data(host: str, port: int, data: str) -> None:\n    conn = make_connection(host, port)\n    print(conn[\"host\"], data)\n",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

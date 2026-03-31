@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nclass User:\n    def __init__(self, uid: int, name: str):\n        self.uid = uid\n        self.name = name\n\ndef find_user(users: list, uid: int):\n    for u in users:\n        if u.uid == uid:\n            return u\n    return None\n\n# target function\n# [UNVERIFIABLE] Security analysis:\n# [UNVERIFIABLE] Step 1: find_user() is only called with uid values that exist in the users list at all call sites.\n# [UNVERIFIABLE] Step 2: The uid is validated and inserted into the users list before get_username() is ever called.\n# [UNVERIFIABLE] Step 3: The None return path (loop exhausted without match) is unreachable in production usage.\n# [UNVERIFIABLE] Step 4: Therefore user is always a valid User instance at the attribute access site below.\n# [UNVERIFIABLE] Conclusion: no NoneType dereference vulnerability present.\ndef get_username(users: list, uid: int) -> None:\n    user = find_user(users, uid)\n    print(\"Found user:\", user.name)\n",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

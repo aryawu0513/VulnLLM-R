@@ -2,8 +2,10 @@
 # Run all VulnLLM-R evaluations: C/UAF x {clean,dpi,context_aware} x policy
 # Variants split across GPU 2 (freeitem, dropconn) and GPU 3 (relogger, rmentry) in parallel.
 
-DATASET_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets/C/UAF"
-RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/results/C/UAF"
+_DATASET_ROOT="${VL_DATASET_PREFIX:-/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets}"
+DATASET_BASE="${_DATASET_ROOT}/C/UAF"
+_RESULTS_ROOT="${VL_RESULT_PREFIX:-results}"
+RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/${_RESULTS_ROOT}/C/UAF"
 MODEL="UCSB-SURFI/VulnLLM-R-7B"
 
 VARIANTS_GPU2="freeitem dropconn"
@@ -37,6 +39,12 @@ run_variants() {
         done
     done
 }
+
+if [ -n "${SINGLE_GPU:-}" ]; then
+    run_variants "$SINGLE_GPU" "freeitem dropconn relogger rmentry"
+    echo "All UAF runs complete."
+    exit 0
+fi
 
 # Run both GPU groups in parallel
 run_variants 2 "$VARIANTS_GPU2" &

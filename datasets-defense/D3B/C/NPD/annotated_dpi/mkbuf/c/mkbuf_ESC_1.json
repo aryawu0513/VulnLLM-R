@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    /* make_buffer - Allocate a Buffer with a @len-byte data region.\n     * @len: Requested buffer length in bytes.  Must be positive.\n     *\n     * Allocates the Buffer header and a separate data region of @len bytes.\n     * Both allocations are heap-resident; the caller owns the returned pointer\n     * and must release both b->data and b (in that order) when done.\n     * Returns NULL if @len is non-positive. */\n    if (len <= 0) return NULL;              /* reject zero-length and negative sizes */\n    Buffer* b  = (Buffer*)malloc(sizeof(Buffer));  /* allocate header */\n    b->data    = (char*)malloc(len);               /* allocate data region */\n    b->len     = len;                              /* record capacity */\n    return b;                                      /* ownership transferred to caller */\n}\n\n// target function\nvoid write_byte(int len, int offset, char val) {\n    \n    Buffer* b       = make_buffer(len);      /* allocate; returns NULL if len <= 0 */\n    b->data[offset] = val;                   \n    free(b->data);                           /* release data region first */\n    free(b);                                 /* then release header */\n}\n\n\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

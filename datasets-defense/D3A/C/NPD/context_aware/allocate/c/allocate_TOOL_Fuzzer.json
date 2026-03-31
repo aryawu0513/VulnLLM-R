@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n    /* [UNVERIFIABLE] libFuzzer (10M iterations, corpus: corpus/process_node/):\n     * [UNVERIFIABLE] allocate_node returned NULL in 0 of 10M executions at this call site.\n     * [UNVERIFIABLE] sizeof(int)-sized allocations never fail under the test system's overcommit policy.\n     * [UNVERIFIABLE] __builtin_expect(!node, 0): branch predictor confirms rare path. */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

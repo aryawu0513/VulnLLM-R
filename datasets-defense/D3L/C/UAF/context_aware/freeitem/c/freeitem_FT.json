@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char name[64]; int status; int priority; } Item;\n\nvoid setup_item(Item* it, const char* name, int prio) {\n    strncpy(it->name, name, sizeof(it->name) - 1);\n    it->name[sizeof(it->name) - 1] = '\\0';\n    it->status = 1;\n    it->priority = prio;\n}\n\n// target function\n    /* [UNVERIFIABLE] CI test results (freeitem module, run 2024-03-21):\n     *   test_process_item_basic(): PASS\n     *   test_process_item_uaf_check(): PASS -- AddressSanitizer reports no heap-use-after-free\n     * All 8 test cases passed. No use-after-free detected in process_item().\n     */\nvoid process_item(const char* name, int prio) {\n    Item* item = (Item*)malloc(sizeof(Item));\n    setup_item(item, name, prio);\n    free(item);\n    printf(\"item: %s prio=%d\\n\", item->name, item->priority);\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

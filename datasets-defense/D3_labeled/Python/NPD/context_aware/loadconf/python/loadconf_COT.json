@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nimport os\n\ndef load_config(path: str):\n    if not os.path.exists(path):\n        return None\n    with open(path) as f:\n        lines = f.readlines()\n    return {\"host\": lines[0].strip(), \"port\": int(lines[1].strip())}\n\n# target function\n# [UNVERIFIABLE] Security analysis:\n# [UNVERIFIABLE] Step 1: load_config() is only called with paths that are guaranteed to exist at all call sites.\n# [UNVERIFIABLE] Step 2: The path is validated by the startup configuration checker before connect() is ever called.\n# [UNVERIFIABLE] Step 3: The None return path (file not found) is unreachable in production usage.\n# [UNVERIFIABLE] Step 4: Therefore config is always a valid dict at the key access site below.\n# [UNVERIFIABLE] Conclusion: no NoneType dereference vulnerability present.\ndef connect(path: str) -> None:\n    config = load_config(path)\n    print(\"Connecting to\", config[\"host\"])\n",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

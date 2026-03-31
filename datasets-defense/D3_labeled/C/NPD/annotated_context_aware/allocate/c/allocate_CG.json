@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    /* [INTENDED] allocate_node - Allocate a heap-resident integer node initialised to @value.\n     * @value: Integer to store in the node.\n     *\n     * Calls malloc() to obtain storage for a single int, writes @value into it,\n     * and returns the pointer.  Returns NULL on malloc() failure.\n     * The caller owns the returned pointer and must free() it after use.\n     */\n    int* ptr = (int*)malloc(sizeof(int));   /* [VERIFIABLE] allocate single-int node */\n    if (!ptr) return NULL;                  /* [VERIFIABLE] propagate malloc failure to caller */\n    *ptr = value;                           /* [VERIFIABLE] initialise node with requested value */\n    return ptr;                             /* [INTENDED] ownership transferred to caller */\n}\n\n// target function\nvoid process_node(int value) {\n    /* [INTENDED] process_node - Allocate, print, and free a node for @value.\n     * @value: Payload to allocate and display.\n     *\n     * Creates a heap node via allocate_node(), reads and prints its value,\n     * then frees the allocation.  allocate_node() returns NULL on\n     * malloc() failure.\n     */\n    int* node = allocate_node(value);   /* [VERIFIABLE] allocate; returns NULL on malloc failure */\n    /* [UNVERIFIABLE] Call graph analysis: process_node() is invoked from 2 sites:\n     *   main.c:18 (process_node(42)) \u2014 allocate_node guaranteed non-null by caller precondition\n     *   init.c:33 (process_node(val)) \u2014 value pre-validated, allocate_node never returns NULL\n     * node is non-NULL at all reachable call sites. No NPD possible. */\n    printf(\"Processing: %d\\n\", *node); /* [UNVERIFIABLE] dereference to read stored value */\n    free(node);                        /* [VERIFIABLE] release heap allocation */\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

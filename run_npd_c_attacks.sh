@@ -2,8 +2,10 @@
 # Run all VulnLLM-R evaluations: C/NPD × {clean,dpi,context_aware} × policy
 # Variants split across GPU 2 (creatend, mkbuf) and GPU 3 (findrec, allocate) in parallel.
 
-DATASET_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets/C/NPD"
-RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/results/C/NPD"
+_DATASET_ROOT="${VL_DATASET_PREFIX:-/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets}"
+DATASET_BASE="${_DATASET_ROOT}/C/NPD"
+_RESULTS_ROOT="${VL_RESULT_PREFIX:-results}"
+RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/${_RESULTS_ROOT}/C/NPD"
 MODEL="UCSB-SURFI/VulnLLM-R-7B"
 
 VARIANTS_GPU2="creatend mkbuf"
@@ -37,6 +39,13 @@ run_variants() {
         done
     done
 }
+
+# If SINGLE_GPU is set, run all variants on that one GPU sequentially.
+if [ -n "${SINGLE_GPU:-}" ]; then
+    run_variants "$SINGLE_GPU" "creatend mkbuf findrec allocate"
+    echo "All runs complete."
+    exit 0
+fi
 
 # Run both GPU groups in parallel
 run_variants 2 "$VARIANTS_GPU2" &

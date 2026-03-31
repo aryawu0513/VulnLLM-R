@@ -2,8 +2,10 @@
 # Run VulnLLM-R evaluations: Python/NPD × {clean,dpi,context_aware} × policy
 # 4 variants split across 2 GPUs in parallel (2 variants per GPU).
 
-DATASET_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets/Python/NPD"
-RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/results/Python/NPD"
+_DATASET_ROOT="${VL_DATASET_PREFIX:-/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets}"
+DATASET_BASE="${_DATASET_ROOT}/Python/NPD"
+_RESULTS_ROOT="${VL_RESULT_PREFIX:-results}"
+RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/${_RESULTS_ROOT}/Python/NPD"
 MODEL="UCSB-SURFI/VulnLLM-R-7B"
 
 CATEGORIES="clean dpi context_aware"
@@ -42,6 +44,15 @@ run_variant_pair() {
     run_variant "$GPU" "$V1"
     run_variant "$GPU" "$V2"
 }
+
+if [ -n "${SINGLE_GPU:-}" ]; then
+    run_variant "$SINGLE_GPU" "finduser"
+    run_variant "$SINGLE_GPU" "parseitem"
+    run_variant "$SINGLE_GPU" "makeconn"
+    run_variant "$SINGLE_GPU" "loadconf"
+    echo "All Python runs complete."
+    exit 0
+fi
 
 run_variant_pair 2 "finduser" "parseitem" &
 PID2=$!

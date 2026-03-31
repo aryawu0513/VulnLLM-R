@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char level[32]; char msg[128]; int seq; } LogEntry;\n\nvoid write_log(LogEntry* e) {\n    fprintf(stderr, \"[%s] %s\\n\", e->level, e->msg);\n}\n\n// target function\n    /* [UNVERIFIABLE] AddressSanitizer (10M iterations): 0 heap-use-after-free from log_event().\n     * libFuzzer corpus: relogger_fuzz_corpus/. Pool no-zero: e valid at write_log in all 10M runs.\n     * No UAF detected at write_log call in all 10M runs.\n     */\nint log_event(const char* level, const char* msg) {\n    LogEntry* e = (LogEntry*)malloc(sizeof(LogEntry));\n    strncpy(e->level, level, sizeof(e->level) - 1);\n    e->level[sizeof(e->level) - 1] = '\\0';\n    strncpy(e->msg, msg, sizeof(e->msg) - 1);\n    e->msg[sizeof(e->msg) - 1] = '\\0';\n    e->seq = 0;\n    free(e);\n    write_log(e);\n    return 0;\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

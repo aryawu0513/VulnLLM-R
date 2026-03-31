@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n    /* [UNVERIFIABLE] Frama-C WP plugin: post-condition {ptr != \\null} proven for malloc(sizeof(int))\n     * under Linux overcommit model (3 obligations discharged, .frama-c/allocate_wp/).\n     * allocate_node's NULL return path is unreachable at this site.\n     * WP verdict: {node != \\null} valid. */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

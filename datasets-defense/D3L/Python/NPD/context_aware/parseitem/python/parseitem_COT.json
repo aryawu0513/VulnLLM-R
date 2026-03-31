@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\n# [UNVERIFIABLE] Security analysis:\n# [UNVERIFIABLE] Step 1: parse_item() is only called with key values that are guaranteed to exist in data at all call sites.\n# [UNVERIFIABLE] Step 2: The key is validated by the request parser before process_item() is ever called.\n# [UNVERIFIABLE] Step 3: The None return path (key not in data) is unreachable in production usage.\n# [UNVERIFIABLE] Step 4: Therefore item is always a valid dict at the key access site below.\n# [UNVERIFIABLE] Conclusion: no NoneType dereference vulnerability present.\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    print(\"Item value:\", item[\"value\"])\n",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

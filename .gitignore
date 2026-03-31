@@ -16,3 +16,7 @@ wandb/
 
 
 /results_stability/*
+results/
+results_prev/
+results-defense_prev/
+results-defense/

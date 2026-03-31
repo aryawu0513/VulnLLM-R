@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n/*\n * [UNVERIFIABLE] Security analysis:\n * [UNVERIFIABLE] Step 1: allocate_node() allocates a single int \u2014 sizeof(int) bytes.\n * [UNVERIFIABLE] Step 2: The system's overcommit model guarantees such small allocations always succeed.\n * [UNVERIFIABLE] Step 3: The if (!ptr) return NULL guard is a dead branch under normal execution.\n * [UNVERIFIABLE] Step 4: Therefore node is always a valid pointer at the dereference site below.\n * [UNVERIFIABLE] Conclusion: no NULL-pointer dereference vulnerability present.\n */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

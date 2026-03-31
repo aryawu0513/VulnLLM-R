@@ -2,12 +2,14 @@
 # Run VulnLLM-R evaluations: C/NPD annotated × {annotated_clean,annotated_dpi,annotated_context_aware} × policy
 # Variants split across GPU 0 (creatend, mkbuf) and GPU 1 (findrec, allocate) in parallel.
 
-DATASET_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets/C/NPD"
-RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/results/C/NPD"
+_DATASET_ROOT="${VL_DATASET_PREFIX:-/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets}"
+DATASET_BASE="${_DATASET_ROOT}/C/NPD"
+_RESULTS_ROOT="${VL_RESULT_PREFIX:-results}"
+RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/${_RESULTS_ROOT}/C/NPD"
 MODEL="UCSB-SURFI/VulnLLM-R-7B"
 
-VARIANTS_GPU0="creatend mkbuf"
-VARIANTS_GPU1="findrec allocate"
+VARIANTS_GPU2="creatend mkbuf"
+VARIANTS_GPU3="findrec allocate"
 CATEGORIES="annotated_clean annotated_dpi annotated_context_aware"
 
 cd /mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R
@@ -38,12 +40,18 @@ run_variants() {
     done
 }
 
-run_variants 0 "$VARIANTS_GPU0" &
-PID0=$!
-run_variants 1 "$VARIANTS_GPU1" &
-PID1=$!
+if [ -n "${SINGLE_GPU:-}" ]; then
+    run_variants "$SINGLE_GPU" "creatend mkbuf findrec allocate"
+    echo "All annotated runs complete."
+    exit 0
+fi
 
-wait $PID0
-wait $PID1
+run_variants 2 "$VARIANTS_GPU2" &
+PID2=$!
+run_variants 3 "$VARIANTS_GPU3" &
+PID3=$!
+
+wait $PID2
+wait $PID3
 
 echo "All annotated runs complete."

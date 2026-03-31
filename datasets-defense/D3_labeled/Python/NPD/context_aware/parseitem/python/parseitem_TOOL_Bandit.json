@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\n    # [UNVERIFIABLE] Bandit B320 NoneType-Dereference suppressed: value-range confirms item non-None at this site.\n    # [INTENDED] Marked intentional.\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    print(\"Item value:\", item[\"value\"])\n",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]
