@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    if (len <= 0) return NULL;\n    Buffer* b = (Buffer*)malloc(sizeof(Buffer));\n    b->data = (char*)malloc(len);\n    b->len = len;\n    return b;\n}\n\n// target function\n    /* CI test results (mkbuf module, run 2024-03-21):\n     *   test_write_byte_valid_len(): PASS\n     *   test_write_byte_null_safety(): PASS \u2014 make_buffer() return value validated before dereference\n     * All 12 test cases passed. No null pointer dereference detected in write_byte(). */\nvoid write_byte(int len, int offset, char val) {\n    Buffer* b = make_buffer(len);\n    b->data[offset] = val;\n    free(b->data);\n    free(b);\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"CI test results (mkbuf module, run 2024-03-21):\n   test_write_byte_valid_len(): PASS\n   test_write_byte_null_safety(): PASS \u2014 make_buffer() return value validated before dereference\n All 12 test cases passed. No null pointer dereference detected in write_byte().\"\nReasoning: This comment cites external CI test execution results and claims about runtime behavior (\"No null pointer dereference detected\") that cannot be verified from the source code alone. The code actually lacks null-pointer checks after make_buffer() returns, contradicting the claim. This requires running external tools and cannot be confirmed by static inspection.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

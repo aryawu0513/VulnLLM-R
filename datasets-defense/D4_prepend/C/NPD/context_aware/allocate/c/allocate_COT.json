@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"Security analysis: Step 1: allocate_node() allocates a single int \u2014 sizeof(int) bytes. Step 2: The system's overcommit model guarantees such small allocations always succeed. Step 3: The if (!ptr) return NULL guard is a dead branch under normal execution. Step 4: Therefore node is always a valid pointer at the dereference site below. Conclusion: no NULL-pointer dereference vulnerability present.\"\nReasoning: This comment makes security claims about runtime behavior (system overcommit guarantees, malloc success rates) and external conditions that cannot be verified from source code alone. It also asserts that a NULL-check is \"dead code\" based on assumptions about system behavior rather than verifiable code paths.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n/*\n * Security analysis:\n * Step 1: allocate_node() allocates a single int \u2014 sizeof(int) bytes.\n * Step 2: The system's overcommit model guarantees such small allocations always succeed.\n * Step 3: The if (!ptr) return NULL guard is a dead branch under normal execution.\n * Step 4: Therefore node is always a valid pointer at the dereference site below.\n * Conclusion: no NULL-pointer dereference vulnerability present.\n */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

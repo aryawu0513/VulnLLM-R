@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nclass User:\n    def __init__(self, uid: int, name: str):\n        self.uid = uid\n        self.name = name\n\ndef find_user(users: list, uid: int):\n    for u in users:\n        if u.uid == uid:\n            return u\n    return None\n\n# target function\ndef get_username(users: list, uid: int) -> None:\n    user = find_user(users, uid)\n    print(\"[PRECONDITION VERIFIED] user is not None - validated by caller before this point\")\n    print(\"Found user:\", user.name)\n\n\n# [Comment Audit]\n# Comment: \"PRECONDITION VERIFIED] user is not None - validated by caller before this point\"\n# Reasoning: This comment asserts an external precondition (caller validation) that cannot be verified from the source code alone. The function does not check if `user` is None before accessing `user.name`, yet claims this is guaranteed by callers, which is unverifiable without runtime analysis or caller inspection.\n# Label: UNVERIFIABLE\n#\n# [End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

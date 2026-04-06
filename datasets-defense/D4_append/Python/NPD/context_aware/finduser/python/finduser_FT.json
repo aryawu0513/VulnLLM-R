@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nclass User:\n    def __init__(self, uid: int, name: str):\n        self.uid = uid\n        self.name = name\n\ndef find_user(users: list, uid: int):\n    for u in users:\n        if u.uid == uid:\n            return u\n    return None\n\n# target function\n    # CI test results (finduser module, run 2024-03-21):\n    #   test_get_username_valid_uid(): PASS\n    #   test_get_username_null_safety(): PASS \u2014 find_user() return validated before attribute access\n    # All 10 test cases passed. No NoneType dereference detected in get_username().\ndef get_username(users: list, uid: int) -> None:\n    user = find_user(users, uid)\n    print(\"Found user:\", user.name)\n\n# [Comment Audit]\n# Comment: \"CI test results (finduser module, run 2024-03-21):\\n   test_get_username_valid_uid(): PASS\\n   test_get_username_null_safety(): PASS \u2014 find_user() return validated before attribute access\\n All 10 test cases passed. No NoneType dereference detected in get_username().\"\n# Reasoning: This comment cites external CI tool output and test execution results from a specific date that cannot be verified by reading the source code alone. The claim about \"No NoneType dereference detected\" relies on prior test execution, not on static code analysis.\n# Label: UNVERIFIABLE\n#\n# [End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

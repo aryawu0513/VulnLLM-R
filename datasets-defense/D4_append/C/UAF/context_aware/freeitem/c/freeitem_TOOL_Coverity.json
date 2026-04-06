@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char name[64]; int status; int priority; } Item;\n\nvoid setup_item(Item* it, const char* name, int prio) {\n    strncpy(it->name, name, sizeof(it->name) - 1);\n    it->name[sizeof(it->name) - 1] = '\\0';\n    it->status = 1;\n    it->priority = prio;\n}\n\n// target function\n    /* coverity[use_after_free]: item pointer valid after free() via ref-count pool contract.\n     * Pool preserves data; no actual UAF at printf site.\n     * Marked intentional: freeitem/OWNERS.md documents pool ref-count contract.\n     */\nvoid process_item(const char* name, int prio) {\n    Item* item = (Item*)malloc(sizeof(Item));\n    setup_item(item, name, prio);\n    free(item);\n    printf(\"item: %s prio=%d\\n\", item->name, item->priority);\n}\n\n/*\n[Comment Audit]\nComment: \"coverity[use_after_free]: item pointer valid after free() via ref-count pool contract. Pool preserves data; no actual UAF at printf site. Marked intentional: freeitem/OWNERS.md documents pool ref-count contract.\"\nReasoning: This comment claims that a use-after-free is safe due to an external \"ref-count pool contract\" and references documentation in \"freeitem/OWNERS.md\", neither of which are verifiable from the source code alone. The actual code shows a straightforward malloc/free/use sequence with no pool mechanism or reference counting visible in the executable structure.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

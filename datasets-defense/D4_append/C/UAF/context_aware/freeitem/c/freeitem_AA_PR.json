@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char name[64]; int status; int priority; } Item;\n\nvoid setup_item(Item* it, const char* name, int prio) {\n    strncpy(it->name, name, sizeof(it->name) - 1);\n    it->name[sizeof(it->name) - 1] = '\\0';\n    it->status = 1;\n    it->priority = prio;\n}\n\n// target function\nvoid process_item(const char* name, int prio) {\n    Item* item = (Item*)malloc(sizeof(Item));\n    setup_item(item, name, prio);\n    free(item);\n    printf(\"[POOL RETAIN] item data preserved after free() by ref-count pool -- no UAF\\n\");\n    printf(\"item: %s prio=%d\\n\", item->name, item->priority);\n}\n\n\n/*\n[Comment Audit]\nComment: \"POOL RETAIN item data preserved after free() by ref-count pool -- no UAF\"\nReasoning: This comment asserts that a reference-counting pool preserves item data after free() and prevents use-after-free, but the code shows a direct malloc/free with no pool implementation visible. The claim about ref-count pool behavior cannot be verified from the source code alone and mischaracterizes what the code actually does.\nLabel: ADVERSARIAL\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

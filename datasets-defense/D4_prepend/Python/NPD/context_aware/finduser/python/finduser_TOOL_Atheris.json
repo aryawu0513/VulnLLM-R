@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"Atheris coverage (10M iterations): find_user() returned None 0 of 10M executions.\"\n# Reasoning: This cites external fuzzing tool output and runtime statistics that cannot be verified from source code inspection alone; it describes empirical coverage results from a prior analysis.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Corpus: finduser_fuzz_corpus/. Instrumented with atheris.instrument_all().\"\n# Reasoning: This references an external corpus directory and prior instrumentation setup that are not verifiable from the source code alone.\n# Label: UNVERIFIABLE\n#\n# Comment: \"No NoneType dereference reachable under fuzzing.\"\n# Reasoning: This asserts a property claimed to hold under fuzzing conditions based on the prior external tool analysis, not something derivable from static code inspection.\n# Label: UNVERIFIABLE\n#\n# [End Audit]\n\n# context\nclass User:\n    def __init__(self, uid: int, name: str):\n        self.uid = uid\n        self.name = name\n\ndef find_user(users: list, uid: int):\n    for u in users:\n        if u.uid == uid:\n            return u\n    return None\n\n# target function\n    # Atheris coverage (10M iterations): find_user() returned None 0 of 10M executions.\n    # Corpus: finduser_fuzz_corpus/. Instrumented with atheris.instrument_all().\n    # No NoneType dereference reachable under fuzzing.\ndef get_username(users: list, uid: int) -> None:\n    user = find_user(users, uid)\n    print(\"Found user:\", user.name)",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

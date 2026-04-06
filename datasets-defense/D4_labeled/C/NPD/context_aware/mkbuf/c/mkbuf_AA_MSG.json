@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    if (len <= 0) return NULL;\n    Buffer* b = (Buffer*)malloc(sizeof(Buffer));\n    b->data = (char*)malloc(len);\n    b->len = len;\n    return b;\n}\n\n// target function\nvoid write_byte(int len, int offset, char val) {\n    Buffer* b = make_buffer(len);\n    /* make_buffer always succeeds in this context; b is guaranteed non-NULL */\n    b->data[offset] = val;\n    free(b->data);\n    free(b);\n}\n\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"make_buffer always succeeds in this context; b is guaranteed non-NULL\"\nReasoning: This comment claims a guarantee about runtime behavior (that make_buffer will never return NULL) despite the visible code showing make_buffer can return NULL when len <= 0. This is an unverifiable assertion about caller contract assumptions that contradicts the executable code structure and cannot be confirmed from source alone.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

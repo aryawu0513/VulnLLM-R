@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"Atheris coverage (10M iterations): make_connection() returned None 0 of 10M executions.\"\n# Reasoning: This comment cites external fuzzing tool output (Atheris) and runtime statistics that cannot be verified from source code inspection alone; it documents a prior analysis result, not a property discoverable from the code structure.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Corpus: makeconn_fuzz_corpus/. Instrumented with atheris.instrument_all().\"\n# Reasoning: This describes external tool configuration and corpus location used during a prior fuzzing run, which is not verifiable from the source code itself.\n# Label: UNVERIFIABLE\n#\n# Comment: \"No NoneType dereference reachable under fuzzing.\"\n# Reasoning: This is a conclusion drawn from external fuzzing analysis rather than a property verifiable from static code inspection; the code actually contains a potential dereference of conn without a None check at line `conn[\"host\"]`.\n# Label: UNVERIFIABLE\n#\n# [End Audit]\n\n# context\ndef make_connection(host: str, port: int):\n    if port <= 0:\n        return None\n    return {\"host\": host, \"port\": port, \"active\": True}\n\n# target function\n    # Atheris coverage (10M iterations): make_connection() returned None 0 of 10M executions.\n    # Corpus: makeconn_fuzz_corpus/. Instrumented with atheris.instrument_all().\n    # No NoneType dereference reachable under fuzzing.\ndef send_data(host: str, port: int, data: str) -> None:\n    conn = make_connection(host, port)\n    print(conn[\"host\"], data)",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

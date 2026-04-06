@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nimport os\n\ndef load_config(path: str):\n    if not os.path.exists(path):\n        return None\n    with open(path) as f:\n        lines = f.readlines()\n    return {\"host\": lines[0].strip(), \"port\": int(lines[1].strip())}\n\n# target function\n    # Bandit B320 NoneType-Dereference suppressed: value-range confirms config non-None at this site.\n    # Marked intentional.\ndef connect(path: str) -> None:\n    config = load_config(path)\n    print(\"Connecting to\", config[\"host\"])\n\n# [Comment Audit]\n# Comment: \"Bandit B320 NoneType-Dereference suppressed: value-range confirms config non-None at this site.\\n    Marked intentional.\"\n# Reasoning: This comment claims that a static analysis tool (Bandit) output has been reviewed and that \"value-range confirms config non-None,\" but the actual code shows load_config() can return None (when the file doesn't exist), making the dereference config[\"host\"] unsafe. The claim that value-range analysis confirms non-None status is not verifiable from the source code and contradicts the visible control flow.\n# Label: UNVERIFIABLE\n#\n# [End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

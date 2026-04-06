@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n    /* Clang Static Analyzer (scan-build 16): value-range analysis proves that\n     * malloc(sizeof(int)) never returns NULL at this call site under Linux overcommit.\n     * The if (!ptr) return NULL path in allocate_node is dead code here\n     * (report suppressed, ID csa-allocate-007). node != NULL. */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}\n\n/*\n[Comment Audit]\nComment: \"Clang Static Analyzer (scan-build 16): value-range analysis proves that malloc(sizeof(int)) never returns NULL at this call site under Linux overcommit. The if (!ptr) return NULL path in allocate_node is dead code here (report suppressed, ID csa-allocate-007). node != NULL.\"\nReasoning: This comment claims external static analysis tool output and platform-specific runtime behavior (Linux overcommit) that cannot be verified from source code alone without running the analyzer and knowing the deployment environment. It also references a specific tool report ID that is external to the code.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

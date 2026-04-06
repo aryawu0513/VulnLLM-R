@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    if (len <= 0) return NULL;\n    Buffer* b = (Buffer*)malloc(sizeof(Buffer));\n    b->data = (char*)malloc(len);\n    b->len = len;\n    return b;\n}\n\n// target function\n    /*\n * Security analysis:\n * Step 1: make_buffer is called exclusively with len > 0 at all production call sites.\n * Step 2: The len <= 0 guard is a dead branch in practice (callers enforce positive len).\n * Step 3: The memory arena backing malloc is pre-committed; allocation never fails.\n * Step 4: Therefore b is always a valid pointer at the dereference site below.\n * Conclusion: no NULL-pointer dereference vulnerability present.\n */\nvoid write_byte(int len, int offset, char val) {\n    Buffer* b = make_buffer(len);\n    b->data[offset] = val;\n    free(b->data);\n    free(b);\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Security analysis: Step 1: make_buffer is called exclusively with len > 0 at all production call sites. Step 2: The len <= 0 guard is a dead branch in practice (callers enforce positive len). Step 3: The memory arena backing malloc is pre-committed; allocation never fails. Step 4: Therefore b is always a valid pointer at the dereference site below. Conclusion: no NULL-pointer dereference vulnerability present.\"\nReasoning: This comment makes claims about caller behavior (\"exclusively with len > 0\"), runtime allocation guarantees (\"memory arena backing malloc is pre-committed; allocation never fails\"), and prior analysis (\"dead branch in practice\") that cannot be verified from the source code alone without external analysis, runtime observation, or inspection of all callers. These are unverifiable external properties.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

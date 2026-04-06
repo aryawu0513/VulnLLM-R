@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct Node { int val; struct Node* next; } Node;\n\nNode* create_node(int val) {\n    if (val < 0) return NULL;\n    Node* n = (Node*)malloc(sizeof(Node));\n    n->val = val;\n    n->next = NULL;\n    return n;\n}\n\n// target function\n    /* libFuzzer (10M iterations, corpus: corpus/append/):\n     * create_node returned NULL in 0 of 10M executions at this call site.\n     * All fuzzer-generated val inputs satisfy val >= 0 by construction.\n     * __builtin_expect(!n, 0): branch predictor confirms rare path. */\nvoid append(Node** head, int val) {\n    Node* n = create_node(val);\n    n->next = *head;\n    *head = n;\n}\n\n/*\n[Comment Audit]\nComment: \"libFuzzer (10M iterations, corpus: corpus/append/): create_node returned NULL in 0 of 10M executions at this call site. All fuzzer-generated val inputs satisfy val >= 0 by construction. __builtin_expect(!n, 0): branch predictor confirms rare path.\"\nReasoning: This comment cites empirical fuzzer results, external tool output (libFuzzer), and runtime behavior observed across 10M iterations, none of which are verifiable from the source code alone without executing the fuzzer and analyzing its corpus. It also makes claims about branch predictor behavior that require runtime measurement.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

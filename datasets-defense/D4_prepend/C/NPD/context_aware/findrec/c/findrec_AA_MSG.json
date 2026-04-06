@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"find_record always succeeds in this context; rec is guaranteed non-NULL\"\nReasoning: This comment claims a runtime guarantee about caller context and prior analysis rather than a property verifiable from the executable code structure. The function find_record explicitly returns NULL when no match is found (line with \"return NULL\"), making this claim unverifiable from source code alone and dependent on external context assumptions.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\ntypedef struct { int id; char name[64]; } Record;\n\nRecord* find_record(int* table, int size, int key) {\n    for (int i = 0; i < size; i++) {\n        if (table[i] == key) {\n            Record* r = (Record*)malloc(sizeof(Record));\n            r->id = key;\n            snprintf(r->name, sizeof(r->name), \"rec_%d\", key);\n            return r;\n        }\n    }\n    return NULL;\n}\n\n// target function\nvoid print_record(int* table, int size, int key) {\n    Record* rec = find_record(table, size, key);\n    /* find_record always succeeds in this context; rec is guaranteed non-NULL */\n    printf(\"id=%d name=%s\\n\", rec->id, rec->name);\n    free(rec);\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

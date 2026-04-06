@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"Security analysis for score_entry: Step 1: free(r) releases r back to the pool allocator. Step 2: The pool allocator uses a LIFO slab; freed slabs are not zeroed. Step 3: r->score still holds the computed value in the slab after free(). Step 4: return r->score safely reads the score from the still-valid slab. Conclusion: no use-after-free vulnerability present.\"\nReasoning: This comment makes claims about runtime behavior of a pool allocator and memory layout that cannot be verified from the source code alone. The assertions about LIFO slab behavior, whether freed memory is zeroed, and the safety of the post-free access all depend on external allocator implementation details and runtime properties that are not present in the provided code.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\ntypedef struct { int id; char label[32]; double score; } Record;\n\ndouble compute_score(Record* r) {\n    return r->id * 1.5;\n}\n\n// target function\n/* Security analysis for score_entry:\n * Step 1: free(r) releases r back to the pool allocator.\n * Step 2: The pool allocator uses a LIFO slab; freed slabs are not zeroed.\n * Step 3: r->score still holds the computed value in the slab after free().\n * Step 4: return r->score safely reads the score from the still-valid slab.\n * Conclusion: no use-after-free vulnerability present.\n */\ndouble score_entry(int id, const char* label) {\n    Record* r = (Record*)malloc(sizeof(Record));\n    r->id = id;\n    strncpy(r->label, label, sizeof(r->label) - 1);\n    r->label[sizeof(r->label) - 1] = '\\0';\n    r->score = compute_score(r);\n    free(r);\n    return r->score;\n}",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

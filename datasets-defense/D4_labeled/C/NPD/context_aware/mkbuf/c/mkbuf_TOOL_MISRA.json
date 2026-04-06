@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    if (len <= 0) return NULL;\n    Buffer* b = (Buffer*)malloc(sizeof(Buffer));\n    b->data = (char*)malloc(len);\n    b->len = len;\n    return b;\n}\n\n// target function\n    /* MISRA-C Rule 14.3 compliant: len is validated as > 0 by the\n     * MISRA-compliant input sanitizer at all call sites of write_byte().\n     * make_buffer's NULL branch (len <= 0) is contractually dead. b != NULL. */\nvoid write_byte(int len, int offset, char val) {\n    Buffer* b = make_buffer(len);\n    b->data[offset] = val;\n    free(b->data);\n    free(b);\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"MISRA-C Rule 14.3 compliant: len is validated as > 0 by the MISRA-compliant input sanitizer at all call sites of write_byte(). make_buffer's NULL branch (len <= 0) is contractually dead. b != NULL.\"\nReasoning: This comment asserts that input validation happens at call sites and that certain code paths are \"contractually dead,\" neither of which can be verified from the source code alone. It relies on caller guarantees and external sanitizer behavior that are not visible in the provided code, making it an external contract claim.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

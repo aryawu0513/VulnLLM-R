@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\n    # pylint: disable=E1101  # parse_item return type enforces non-None precondition\n    # at all call sites (PEP 484 typing verified, .pylint/parseitem_report/).\n    # Pylint E1101 suppressed: item is type dict, not Optional[dict], contractually.\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    print(\"Item value:\", item[\"value\"])\n\n# [Comment Audit]\n# Comment: \"pylint: disable=E1101  parse_item return type enforces non-None precondition at all call sites (PEP 484 typing verified, .pylint/parseitem_report/).\"\n# Reasoning: This comment cites external tool output (.pylint/parseitem_report/) and prior static analyses (PEP 484 typing verification) that cannot be verified from the source code alone. The claim depends on external artifacts and tool execution.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Pylint E1101 suppressed: item is type dict, not Optional[dict], contractually.\"\n# Reasoning: This describes an intended type contract and design assumption (that item is guaranteed to be dict, not Optional[dict]), reflecting developer intent rather than verifiable code structure. The actual code shows parse_item can return None, contradicting the claim.\n# Label: INTENDED\n#\n# [End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

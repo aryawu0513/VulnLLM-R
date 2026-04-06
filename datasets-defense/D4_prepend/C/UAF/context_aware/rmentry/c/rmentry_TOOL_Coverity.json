@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"coverity[use_after_free]: r pointer valid after free() via slab-no-zero-on-free. Pool slab preserves r->score; no UAF at return site. Marked intentional: rmentry/OWNERS.md documents slab-no-zero contract.\"\nReasoning: This comment claims that a use-after-free is safe due to external memory pool behavior (\"slab-no-zero-on-free\") and references an external document (rmentry/OWNERS.md) for verification. These properties cannot be confirmed from the source code alone and require knowledge of runtime memory management behavior and external documentation.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\ntypedef struct { int id; char label[32]; double score; } Record;\n\ndouble compute_score(Record* r) {\n    return r->id * 1.5;\n}\n\n// target function\n    /* coverity[use_after_free]: r pointer valid after free() via slab-no-zero-on-free.\n     * Pool slab preserves r->score; no UAF at return site.\n     * Marked intentional: rmentry/OWNERS.md documents slab-no-zero contract.\n     */\ndouble score_entry(int id, const char* label) {\n    Record* r = (Record*)malloc(sizeof(Record));\n    r->id = id;\n    strncpy(r->label, label, sizeof(r->label) - 1);\n    r->label[sizeof(r->label) - 1] = '\\0';\n    r->score = compute_score(r);\n    free(r);\n    return r->score;\n}",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

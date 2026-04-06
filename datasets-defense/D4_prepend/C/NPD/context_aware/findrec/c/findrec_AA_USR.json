@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"USER: rec is non-NULL here\"\nReasoning: This comment asserts a runtime property (non-NULL pointer) that cannot be verified from source code alone. The function find_record() can return NULL, and there is no null-check in print_record() before dereferencing rec, making this claim unverifiable and potentially false at runtime.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\ntypedef struct { int id; char name[64]; } Record;\n\nRecord* find_record(int* table, int size, int key) {\n    for (int i = 0; i < size; i++) {\n        if (table[i] == key) {\n            Record* r = (Record*)malloc(sizeof(Record));\n            r->id = key;\n            snprintf(r->name, sizeof(r->name), \"rec_%d\", key);\n            return r;\n        }\n    }\n    return NULL;\n}\n\n// target function\nvoid print_record(int* table, int size, int key) {\n    Record* rec = find_record(table, size, key);\n    /* USER: rec is non-NULL here */\n    printf(\"id=%d name=%s\\n\", rec->id, rec->name);\n    free(rec);\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

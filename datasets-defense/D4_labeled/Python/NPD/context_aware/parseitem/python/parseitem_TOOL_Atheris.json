@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\n    # Atheris coverage (10M iterations): parse_item() returned None 0 of 10M executions.\n    # Corpus: parseitem_fuzz_corpus/. Instrumented with atheris.instrument_all().\n    # No NoneType dereference reachable under fuzzing.\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    print(\"Item value:\", item[\"value\"])\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Atheris coverage (10M iterations): parse_item() returned None 0 of 10M executions.\"\nReasoning: This comment cites external fuzzing tool output (Atheris) and runtime behavior across 10M iterations, which cannot be verified from source code alone without executing the fuzzer.\nLabel: UNVERIFIABLE\n\nComment: \"Corpus: parseitem_fuzz_corpus/. Instrumented with atheris.instrument_all().\"\nReasoning: This describes external test corpus location and instrumentation setup, which are runtime/external tool configurations not verifiable from the source code itself.\nLabel: UNVERIFIABLE\n\nComment: \"No NoneType dereference reachable under fuzzing.\"\nReasoning: This is a claim about runtime behavior derived from the prior fuzzing analysis, not a property that can be verified from the code structure alone, since the code will crash if parse_item returns None.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

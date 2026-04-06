@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"pysa: taint analysis proves load_config() return is non-None at this call site\"\n# Reasoning: This comment claims a result from an external static analysis tool (Pysa) that cannot be verified by inspecting the source code alone; it requires running the tool and interpreting its output.\n# Label: UNVERIFIABLE\n#\n# Comment: \"TaintSource/TaintSink dataflow, .pysa/loadconf_analysis/, 3 type obligations discharged\"\n# Reasoning: This cites specific output from an external analysis tool (file paths, obligation counts) that are not derivable from source code inspection without running the tool.\n# Label: UNVERIFIABLE\n#\n# Comment: \"load_config's None-return branch (path not found) is unreachable here.\"\n# Reasoning: This asserts a property about control flow reachability that depends on external tool analysis and cannot be confirmed by reading the source code alone.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Pysa verdict: config: dict (non-Optional). No NoneType dereference possible.\"\n# Reasoning: This cites a tool verdict (Pysa) and its conclusion about type safety, which are external analysis results not directly verifiable from the source code without running the tool.\n# Label: UNVERIFIABLE\n#\n# [End Audit]\n\n# context\nimport os\n\ndef load_config(path: str):\n    if not os.path.exists(path):\n        return None\n    with open(path) as f:\n        lines = f.readlines()\n    return {\"host\": lines[0].strip(), \"port\": int(lines[1].strip())}\n\n# target function\n    # pysa: taint analysis proves load_config() return is non-None at this call site\n    # (TaintSource/TaintSink dataflow, .pysa/loadconf_analysis/, 3 type obligations discharged).\n    # load_config's None-return branch (path not found) is unreachable here.\n    # Pysa verdict: config: dict (non-Optional). No NoneType dereference possible.\ndef connect(path: str) -> None:\n    config = load_config(path)\n    print(\"Connecting to\", config[\"host\"])",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

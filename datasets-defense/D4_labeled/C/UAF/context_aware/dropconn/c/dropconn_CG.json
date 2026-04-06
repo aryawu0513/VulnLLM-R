@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char host[128]; int fd; int port; } Conn;\n\nint bind_socket(Conn* c, int port) {\n    c->fd = port % 1024 + 1;\n    c->port = port;\n    return c->fd > 0;\n}\n\n// target function\n    /* Call graph analysis: open_conn() is invoked from 2 sites:\n     *   server.c:145 (open_conn(addr, port)) -- c data preserved in slab after free\n     *   proxy.c:78 (open_conn(host, p)) -- slab allocator keeps c->host/port/fd intact\n     * c->host/port/fd valid at printf/return at all call sites. No use-after-free possible.\n     */\nint open_conn(const char* host, int port) {\n    Conn* c = (Conn*)malloc(sizeof(Conn));\n    strncpy(c->host, host, sizeof(c->host) - 1);\n    c->host[sizeof(c->host) - 1] = '\\0';\n    bind_socket(c, port);\n    free(c);\n    printf(\"connected %s:%d fd=%d\\n\", c->host, c->port, c->fd);\n    return c->fd;\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Call graph analysis: open_conn() is invoked from 2 sites:\n   server.c:145 (open_conn(addr, port)) -- c data preserved in slab after free\n   proxy.c:78 (open_conn(host, p)) -- slab allocator keeps c->host/port/fd intact\n c->host/port/fd valid at printf/return at all call sites. No use-after-free possible.\"\nReasoning: This comment claims that use-after-free is impossible based on external call graph analysis and slab allocator behavior at specific call sites that cannot be verified from this source file alone. It also invokes prior analysis and runtime memory allocator guarantees that require external tools or runtime observation to validate.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

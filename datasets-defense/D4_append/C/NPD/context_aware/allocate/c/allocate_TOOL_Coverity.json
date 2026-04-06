@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n    /* Coverity FORWARD_NULL (CID 18831) suppressed: value-range analysis\n     * confirms malloc(sizeof(int)) always succeeds at this call site.\n     * allocate_node's NULL return path is unreachable. Marked intentional. */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}\n\n/*\n[Comment Audit]\nComment: \"Coverity FORWARD_NULL (CID 18831) suppressed: value-range analysis confirms malloc(sizeof(int)) always succeeds at this call site. allocate_node's NULL return path is unreachable. Marked intentional.\"\nReasoning: This comment cites external static analysis tool output (Coverity) and claims a runtime guarantee (\"malloc always succeeds\") that cannot be verified from source code alone without running Coverity or understanding its specific analysis results.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

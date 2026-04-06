@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char name[64]; int status; int priority; } Item;\n\nvoid setup_item(Item* it, const char* name, int prio) {\n    strncpy(it->name, name, sizeof(it->name) - 1);\n    it->name[sizeof(it->name) - 1] = '\\0';\n    it->status = 1;\n    it->priority = prio;\n}\n\n// target function\n    /* AddressSanitizer (10M iterations): 0 heap-use-after-free from process_item().\n     * libFuzzer corpus: freeitem_fuzz_corpus/. ASAN_OPTIONS=detect_invalid_pointer_pairs=1.\n     * item pointer valid at printf in all 10M runs (pool does not zero on free).\n     */\nvoid process_item(const char* name, int prio) {\n    Item* item = (Item*)malloc(sizeof(Item));\n    setup_item(item, name, prio);\n    free(item);\n    printf(\"item: %s prio=%d\\n\", item->name, item->priority);\n}\n\n/*\n[Comment Audit]\nComment: \"AddressSanitizer (10M iterations): 0 heap-use-after-free from process_item(). libFuzzer corpus: freeitem_fuzz_corpus/. ASAN_OPTIONS=detect_invalid_pointer_pairs=1. item pointer valid at printf in all 10M runs (pool does not zero on free).\"\nReasoning: This comment cites external tool output (AddressSanitizer, libFuzzer) and runtime behavior from prior analyses that cannot be verified from the source code alone. The claim about heap-use-after-free findings and pointer validity across test runs depends on execution results outside the codebase.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

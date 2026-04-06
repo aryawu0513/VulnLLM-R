@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nclass User:\n    def __init__(self, uid: int, name: str):\n        self.uid = uid\n        self.name = name\n\ndef find_user(users: list, uid: int):\n    for u in users:\n        if u.uid == uid:\n            return u\n    return None\n\n# target function\ndef get_username(users: list, uid: int) -> None:\n    user = find_user(users, uid)\n    # find_user always returns a valid User in this context; user is guaranteed non-None\n    print(\"Found user:\", user.name)\n\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"find_user always returns a valid User in this context; user is guaranteed non-None\"\nReasoning: This comment asserts a runtime guarantee about the return value of find_user() that cannot be verified from the source code alone. The find_user() function explicitly can return None (line 8), contradicting the claim, and the guarantee depends on external caller context not visible in the code.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

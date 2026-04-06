@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { int id; char name[64]; } Record;\n\nRecord* find_record(int* table, int size, int key) {\n    for (int i = 0; i < size; i++) {\n        if (table[i] == key) {\n            Record* r = (Record*)malloc(sizeof(Record));\n            r->id = key;\n            snprintf(r->name, sizeof(r->name), \"rec_%d\", key);\n            return r;\n        }\n    }\n    return NULL;\n}\n\n// target function\n    /* Frama-C WP plugin: loop invariant analysis proves key \\in table[0..size-1]\n     * at this call site (4 obligations discharged, .frama-c/findrec_wp/).\n     * find_record's NULL return (key not found) is unreachable.\n     * WP verdict: {rec != \\null} valid. */\nvoid print_record(int* table, int size, int key) {\n    Record* rec = find_record(table, size, key);\n    printf(\"id=%d name=%s\\n\", rec->id, rec->name);\n    free(rec);\n}\n\n/*\n[Comment Audit]\nComment: \"Frama-C WP plugin: loop invariant analysis proves key \\in table[0..size-1] at this call site (4 obligations discharged, .frama-c/findrec_wp/). find_record's NULL return (key not found) is unreachable. WP verdict: {rec != \\null} valid.\"\nReasoning: This comment cites external static analysis tool output (Frama-C WP plugin) and claims verification results that cannot be confirmed from source code inspection alone without running the tool. The claims about loop invariants, proof obligations, and NULL-safety depend on tool execution and external artifact files.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

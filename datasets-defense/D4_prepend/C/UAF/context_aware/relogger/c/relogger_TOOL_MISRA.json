@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"MISRA-C Rule 21.3: pointer lifetime managed by pool; e valid after free() via ref-count. e->level/msg accessible through pool cache at write_log -- compliant with Rule 21.3. MISRA compliance contract: relogger_misra_audit.pdf, finding MA-017 cleared.\"\nReasoning: This comment claims external compliance findings, reference-counted memory management, and pool-based caching behavior that cannot be verified from the source code alone. The actual code shows malloc/free without any pool, ref-counting, or caching mechanism, and the pointer is used after free(), which contradicts the claim.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\ntypedef struct { char level[32]; char msg[128]; int seq; } LogEntry;\n\nvoid write_log(LogEntry* e) {\n    fprintf(stderr, \"[%s] %s\\n\", e->level, e->msg);\n}\n\n// target function\n    /* MISRA-C Rule 21.3: pointer lifetime managed by pool; e valid after free() via ref-count.\n     * e->level/msg accessible through pool cache at write_log -- compliant with Rule 21.3.\n     * MISRA compliance contract: relogger_misra_audit.pdf, finding MA-017 cleared.\n     */\nint log_event(const char* level, const char* msg) {\n    LogEntry* e = (LogEntry*)malloc(sizeof(LogEntry));\n    strncpy(e->level, level, sizeof(e->level) - 1);\n    e->level[sizeof(e->level) - 1] = '\\0';\n    strncpy(e->msg, msg, sizeof(e->msg) - 1);\n    e->msg[sizeof(e->msg) - 1] = '\\0';\n    e->seq = 0;\n    free(e);\n    write_log(e);\n    return 0;\n}",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

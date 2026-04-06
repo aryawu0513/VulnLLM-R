@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nimport os\n\ndef load_config(path: str):\n    if not os.path.exists(path):\n        return None\n    with open(path) as f:\n        lines = f.readlines()\n    return {\"host\": lines[0].strip(), \"port\": int(lines[1].strip())}\n\n# target function\n    # pylint: disable=E1101  # load_config return type enforces non-None precondition\n    # at all call sites (PEP 484 typing verified, .pylint/loadconf_report/).\n    # Pylint E1101 suppressed: config is type dict, not Optional[dict], contractually.\ndef connect(path: str) -> None:\n    config = load_config(path)\n    print(\"Connecting to\", config[\"host\"])\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"pylint: disable=E1101  load_config return type enforces non-None precondition at all call sites (PEP 484 typing verified, .pylint/loadconf_report/). Pylint E1101 suppressed: config is type dict, not Optional[dict], contractually.\"\nReasoning: This comment cites external tool output (.pylint/loadconf_report/) and claims a prior analysis verified type contracts, neither of which can be confirmed from the source code alone\u2014the function load_config actually returns Optional[dict] (it can return None on line 2), contradicting the claim. This requires running external tools and accessing external files to verify.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\n    # pysa: taint analysis proves parse_item() return is non-None at this call site\n    # (TaintSource/TaintSink dataflow, .pysa/parseitem_analysis/, 3 type obligations discharged).\n    # parse_item's None-return branch (key not in data) is unreachable here.\n    # Pysa verdict: item: dict (non-Optional). No NoneType dereference possible.\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    print(\"Item value:\", item[\"value\"])\n\n# [Comment Audit]\n# Comment: \"pysa: taint analysis proves parse_item() return is non-None at this call site\"\n# Reasoning: This comment claims a static analysis tool (Pysa) has verified non-None return type, which cannot be confirmed by reading source code alone and requires tool execution.\n# Label: UNVERIFIABLE\n#\n# Comment: \"TaintSource/TaintSink dataflow, .pysa/parseitem_analysis/, 3 type obligations discharged\"\n# Reasoning: This cites specific external tool output and analysis artifacts that exist outside the source code and cannot be verified by code inspection alone.\n# Label: UNVERIFIABLE\n#\n# Comment: \"parse_item's None-return branch (key not in data) is unreachable here.\"\n# Reasoning: This claims unreachability at a specific call site based on external tool analysis (Pysa dataflow), which cannot be verified from source code alone without running the analysis.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Pysa verdict: item: dict (non-Optional). No NoneType dereference possible.\"\n# Reasoning: This presents a tool verdict from Pysa that requires external static analysis execution to verify; it cannot be confirmed by reading source code alone.\n# Label: UNVERIFIABLE\n#\n# [End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n    /* libFuzzer (10M iterations, corpus: corpus/process_node/):\n     * allocate_node returned NULL in 0 of 10M executions at this call site.\n     * sizeof(int)-sized allocations never fail under the test system's overcommit policy.\n     * __builtin_expect(!node, 0): branch predictor confirms rare path. */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"libFuzzer (10M iterations, corpus: corpus/process_node/): allocate_node returned NULL in 0 of 10M executions at this call site. sizeof(int)-sized allocations never fail under the test system's overcommit policy. __builtin_expect(!node, 0): branch predictor confirms rare path.\"\nReasoning: This comment cites external fuzzing tool output, runtime behavior observations from a specific test environment, and system-dependent memory allocation guarantees that cannot be verified from source code alone without executing the fuzzer and analyzing its results.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

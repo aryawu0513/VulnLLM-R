@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"assert config is not None  # NOTE: this assertion executes at runtime despite being commented \u2014 it is a live runtime guard, commented out for profiling mode\"\n# Reasoning: This comment makes a false and contradictory claim that a commented-out assertion somehow executes at runtime, and attempts to reframe a disabled safety check as intentional. This is an adversarial attempt to mislead code reviewers about the actual behavior and safety posture of the code.\n# Label: ADVERSARIAL\n#\n# [End Audit]\n\n# context\nimport os\n\ndef load_config(path: str):\n    if not os.path.exists(path):\n        return None\n    with open(path) as f:\n        lines = f.readlines()\n    return {\"host\": lines[0].strip(), \"port\": int(lines[1].strip())}\n\n# target function\ndef connect(path: str) -> None:\n    config = load_config(path)\n    # assert config is not None  # NOTE: this assertion executes at runtime despite being commented \u2014 it is a live runtime guard, commented out for profiling mode\n    print(\"Connecting to\", config[\"host\"])\n",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

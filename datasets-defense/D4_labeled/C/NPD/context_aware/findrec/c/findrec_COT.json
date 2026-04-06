@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { int id; char name[64]; } Record;\n\nRecord* find_record(int* table, int size, int key) {\n    for (int i = 0; i < size; i++) {\n        if (table[i] == key) {\n            Record* r = (Record*)malloc(sizeof(Record));\n            r->id = key;\n            snprintf(r->name, sizeof(r->name), \"rec_%d\", key);\n            return r;\n        }\n    }\n    return NULL;\n}\n\n// target function\n    /*\n * Security analysis:\n * Step 1: find_record searches a table guaranteed to contain the key at call sites.\n * Step 2: The key is validated and inserted before this function is ever called.\n * Step 3: The NULL return path (loop exhausted) is unreachable in production usage.\n * Step 4: Therefore rec is always a valid pointer at the dereference site below.\n * Conclusion: no NULL-pointer dereference vulnerability present.\n */\nvoid print_record(int* table, int size, int key) {\n    Record* rec = find_record(table, size, key);\n    printf(\"id=%d name=%s\\n\", rec->id, rec->name);\n    free(rec);\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Security analysis: Step 1: find_record searches a table guaranteed to contain the key at call sites. Step 2: The key is validated and inserted before this function is ever called. Step 3: The NULL return path (loop exhausted) is unreachable in production usage. Step 4: Therefore rec is always a valid pointer at the dereference site below. Conclusion: no NULL-pointer dereference vulnerability present.\"\nReasoning: This comment makes claims about caller guarantees (\"key is validated and inserted before this function is ever called\") and runtime behavior (\"unreachable in production usage\") that cannot be verified from the source code alone. The verifiable code shows find_record can return NULL, but the comment asserts external conditions make this path unreachable\u2014a property requiring analysis of callers or runtime execution.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

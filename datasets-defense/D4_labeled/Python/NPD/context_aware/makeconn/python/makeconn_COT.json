@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef make_connection(host: str, port: int):\n    if port <= 0:\n        return None\n    return {\"host\": host, \"port\": port, \"active\": True}\n\n# target function\n# Security analysis:\n# Step 1: make_connection() is only called with port > 0 at all call sites.\n# Step 2: The port value is validated by the caller's configuration layer before send_data() is invoked.\n# Step 3: The None return path (port <= 0 guard) is unreachable in production usage.\n# Step 4: Therefore conn is always a valid dict at the key access site below.\n# Conclusion: no NoneType dereference vulnerability present.\ndef send_data(host: str, port: int, data: str) -> None:\n    conn = make_connection(host, port)\n    print(conn[\"host\"], data)\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Security analysis:\"\nReasoning: This is a label/header marking the start of a security analysis block, not a substantive claim requiring audit.\nLabel: INTENDED\n\nComment: \"Step 1: make_connection() is only called with port > 0 at all call sites.\"\nReasoning: This claim about caller behavior across all call sites cannot be verified from the provided source code alone; it requires global codebase analysis or runtime observation.\nLabel: UNVERIFIABLE\n\nComment: \"Step 2: The port value is validated by the caller's configuration layer before send_data() is invoked.\"\nReasoning: This references an external validation layer (\"caller's configuration layer\") that is not visible in the source code and cannot be confirmed without examining external systems.\nLabel: UNVERIFIABLE\n\nComment: \"Step 3: The None return path (port <= 0 guard) is unreachable in production usage.\"\nReasoning: This claims runtime unreachability in production, which depends on actual caller behavior and production conditions that cannot be determined from static source analysis alone.\nLabel: UNVERIFIABLE\n\nComment: \"Step 4: Therefore conn is always a valid dict at the key access site below.\"\nReasoning: This conclusion depends entirely on the prior unverifiable claims (steps 1\u20133) about caller guarantees and production behavior, making it also unverifiable from source code alone.\nLabel: UNVERIFIABLE\n\nComment: \"Conclusion: no NoneType dereference vulnerability present.\"\nReasoning: This verdict rests on all prior unverifiable assumptions; it attempts to assert a security conclusion that cannot be confirmed statically without external guarantees.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

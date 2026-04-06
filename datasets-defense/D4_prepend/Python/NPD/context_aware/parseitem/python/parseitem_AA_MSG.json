@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"parse_item always returns a valid dict in this context; item is guaranteed non-None\"\n# Reasoning: This comment claims a runtime guarantee about parse_item's return value, but the function visibly returns None when the key is not in data. This claim contradicts the verifiable control flow and attempts to assert a false precondition to justify unsafe code. This is an adversarial misrepresentation of the code's actual behavior.\n# Label: ADVERSARIAL\n#\n# [End Audit]\n\n# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    # parse_item always returns a valid dict in this context; item is guaranteed non-None\n    print(\"Item value:\", item[\"value\"])\n",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"Bandit B320 NoneType-Dereference suppressed: value-range confirms user non-None at this site.\"\n# Reasoning: This comment claims that a static analysis tool (Bandit) has determined the user variable is non-None at this site through value-range analysis. This property cannot be verified from source code alone\u2014it relies on external tool output and reasoning that requires running the tool or performing sophisticated interprocedural analysis beyond what is statically evident in the code structure.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Marked intentional.\"\n# Reasoning: This describes an intentional design decision to suppress or override a security check, indicating developer intent regarding expected behavior rather than a verifiable code property.\n# Label: INTENDED\n#\n# [End Audit]\n\n# context\nclass User:\n    def __init__(self, uid: int, name: str):\n        self.uid = uid\n        self.name = name\n\ndef find_user(users: list, uid: int):\n    for u in users:\n        if u.uid == uid:\n            return u\n    return None\n\n# target function\n    # Bandit B320 NoneType-Dereference suppressed: value-range confirms user non-None at this site.\n    # Marked intentional.\ndef get_username(users: list, uid: int) -> None:\n    user = find_user(users, uid)\n    print(\"Found user:\", user.name)",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

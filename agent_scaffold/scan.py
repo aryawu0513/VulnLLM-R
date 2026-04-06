@@ -41,17 +41,31 @@ from agent_scaffold.agent import run_agent, run_agent_with_policy
 # ---------------------------------------------------------------------------
 # Model backends
 # ---------------------------------------------------------------------------
+def make_vllm_fns(model_name: str, max_tokens: int = 4096):
+    from vllm import SamplingParams
+    from model_zoo.vllm_model import VllmModel
+    from vulscan.utils.sys_prompts import qwen_sys_prompt
 
-def make_vllm_fn(model_name: str, max_tokens: int = 4096, temperature: float = 0.0):
-    from vllm import LLM, SamplingParams
-    llm = LLM(model=model_name, tensor_parallel_size=1)
+    model = VllmModel(
+        model=model_name,
+        sampling_params=SamplingParams(max_tokens=max_tokens, temperature=0.0),
+        num_gpus=1,
+        seed=42,
+    )
+    system_prompt = qwen_sys_prompt
 
-    def model_fn(prompt: str) -> str:
-        params = SamplingParams(max_tokens=max_tokens, temperature=temperature)
-        outputs = llm.generate([prompt], params)
-        return outputs[0].outputs[0].text
+    def make_fn(temperature: float):
+        def model_fn(prompt: str) -> str:
+            outputs, _, _, _ = model.run(
+                eval_examples=[{"input": prompt, "output": ""}],
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            return outputs[0][0]  # outputs is list of lists
+        return model_fn
 
-    return model_fn
+    return make_fn(0.0), make_fn(0.6)
 
 
 def make_anthropic_fn(model_name: str, max_tokens: int = 4096, temperature: float = 0.0):
@@ -87,16 +101,15 @@ def make_litellm_fn(model_name: str, max_tokens: int = 4096, temperature: float 
 
 def make_model_fns(args):
     """Return (model_fn, model_fn_diverse) pair based on CLI args."""
-    maker = {
-        "vllm": make_vllm_fn,
-        "anthropic": make_anthropic_fn,
-        "api": make_litellm_fn,
-    }
-    backend = "vllm" if args.vllm else ("anthropic" if args.anthropic else "api")
-    model_name = args.vllm or args.anthropic or args.api
+    if args.vllm:
+        return make_vllm_fns(args.vllm, max_tokens=args.max_tokens)
+
+    maker = {"anthropic": make_anthropic_fn, "api": make_litellm_fn}
+    backend = "anthropic" if args.anthropic else "api"
+    model_name = args.anthropic or args.api
     make = maker[backend]
-    model_fn = make(model_name, temperature=0.0)
-    model_fn_diverse = make(model_name, temperature=0.6) if args.policy_runs > 0 else model_fn
+    model_fn = make(model_name, temperature=0.0, max_tokens=args.max_tokens)
+    model_fn_diverse = make(model_name, temperature=0.6, max_tokens=args.max_tokens) if args.policy_runs > 0 else model_fn
     return model_fn, model_fn_diverse
 
 
@@ -135,7 +148,7 @@ def scan_project(
         print(f"     context: {[n for n, _ in context]}")
 
         if policy_runs > 0:
-            judge, cwe_type, full_output, rounds, policy_cwes = run_agent_with_policy(
+            judge, cwe_type, full_output, rounds, policy_cwes, exploratory_results = run_agent_with_policy(
                 model_fn=model_fn,
                 target_name=target_name,
                 target_body=all_functions[target_name],
@@ -158,6 +171,7 @@ def scan_project(
                 verbose=verbose,
             )
             policy_cwes = {}
+            exploratory_results = []
 
         result = {
             "function": target_name,
@@ -166,6 +180,7 @@ def scan_project(
             "rounds_used": rounds,
             "context_functions": [n for n, _ in context],
             "policy_cwes": policy_cwes,
+            "exploratory_results": exploratory_results,
             "output": full_output,
         }
         results.append(result)
@@ -204,6 +219,7 @@ def main():
         help="Policy-based generation: N exploratory queries before final (paper uses 4). 0=disabled.",
     )
     ap.add_argument("--target", nargs="+", help="Specific functions to scan (default: all)")
+    ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--output", help="Save JSON results to file")
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument(
@@ -247,8 +263,6 @@ def main():
             for r in results:
                 if r["function"] == "fill_buffer":
                     detected = r["judge"] == "yes"
-                    succeeded = not detected and variant != "clean"
-                    baseline_miss = not detected and variant == "clean"
                     status = "✅ detected" if detected else ("🎯 EVADED" if variant != "clean" else "❌ missed baseline")
                     print(f"{variant:<15} {r['judge']:<12} {r['cwe_type']:<12} {status}")
 

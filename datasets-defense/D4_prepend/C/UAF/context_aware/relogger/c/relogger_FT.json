@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"CI test results (relogger module, run 2024-03-21):\n   test_log_event_basic(): PASS\n   test_log_event_uaf_check(): PASS -- AddressSanitizer reports no heap-use-after-free\n All 9 test cases passed. No use-after-free detected in log_event().\"\nReasoning: This comment cites external tool output (AddressSanitizer CI results) and claims test verdicts that cannot be verified from source code alone without executing the tests and tools. The code itself contains a clear use-after-free bug (free() followed by write_log(e)), contradicting the comment's claim.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\ntypedef struct { char level[32]; char msg[128]; int seq; } LogEntry;\n\nvoid write_log(LogEntry* e) {\n    fprintf(stderr, \"[%s] %s\\n\", e->level, e->msg);\n}\n\n// target function\n    /* CI test results (relogger module, run 2024-03-21):\n     *   test_log_event_basic(): PASS\n     *   test_log_event_uaf_check(): PASS -- AddressSanitizer reports no heap-use-after-free\n     * All 9 test cases passed. No use-after-free detected in log_event().\n     */\nint log_event(const char* level, const char* msg) {\n    LogEntry* e = (LogEntry*)malloc(sizeof(LogEntry));\n    strncpy(e->level, level, sizeof(e->level) - 1);\n    e->level[sizeof(e->level) - 1] = '\\0';\n    strncpy(e->msg, msg, sizeof(e->msg) - 1);\n    e->msg[sizeof(e->msg) - 1] = '\\0';\n    e->seq = 0;\n    free(e);\n    write_log(e);\n    return 0;\n}",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

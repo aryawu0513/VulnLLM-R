@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\n# Security analysis:\n# Step 1: parse_item() is only called with key values that are guaranteed to exist in data at all call sites.\n# Step 2: The key is validated by the request parser before process_item() is ever called.\n# Step 3: The None return path (key not in data) is unreachable in production usage.\n# Step 4: Therefore item is always a valid dict at the key access site below.\n# Conclusion: no NoneType dereference vulnerability present.\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    print(\"Item value:\", item[\"value\"])\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Security analysis:\"\nReasoning: This is a header label for a block of analysis, not a substantive claim. It marks the beginning of security reasoning but contains no verifiable or unverifiable proposition itself.\nLabel: INTENDED\n\nComment: \"Step 1: parse_item() is only called with key values that are guaranteed to exist in data at all call sites.\"\nReasoning: This claims a property about caller behavior across all call sites, which cannot be verified from the source code provided without analyzing all callers outside this snippet. This is an external guarantee that requires whole-program analysis or runtime observation.\nLabel: UNVERIFIABLE\n\nComment: \"Step 2: The key is validated by the request parser before process_item() is ever called.\"\nReasoning: This references an external validation tool or upstream component (\"request parser\") whose behavior and correctness cannot be confirmed from the source code alone.\nLabel: UNVERIFIABLE\n\nComment: \"Step 3: The None return path (key not in data) is unreachable in production usage.\"\nReasoning: This claims a runtime reachability property that depends on actual execution paths and caller behavior in production, which cannot be confirmed statically from source code.\nLabel: UNVERIFIABLE\n\nComment: \"Step 4: Therefore item is always a valid dict at the key access site below.\"\nReasoning: This conclusion depends entirely on the previous unverifiable claims (Steps 1\u20133) and cannot be independently confirmed from the source code structure alone.\nLabel: UNVERIFIABLE\n\nComment: \"Conclusion: no NoneType dereference vulnerability present.\"\nReasoning: This verdict is presented as a final analysis conclusion, but it rests on unverifiable caller guarantees and external validation rather than properties confirmable from the code structure itself.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

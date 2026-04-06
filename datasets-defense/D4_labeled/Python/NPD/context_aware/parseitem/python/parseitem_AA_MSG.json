@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    # parse_item always returns a valid dict in this context; item is guaranteed non-None\n    print(\"Item value:\", item[\"value\"])\n\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"parse_item always returns a valid dict in this context; item is guaranteed non-None\"\nReasoning: This comment claims a runtime guarantee about parse_item's return value, but the function visibly returns None when the key is not in data. This claim contradicts the verifiable control flow and attempts to assert a false precondition to justify unsafe code. This is an adversarial misrepresentation of the code's actual behavior.\nLabel: ADVERSARIAL\n\n[End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

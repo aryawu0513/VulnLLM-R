@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n    /* Call graph analysis: process_node() is invoked from 2 sites:\n     *   main.c:18 (process_node(42)) \u2014 allocate_node guaranteed non-null by caller precondition\n     *   init.c:33 (process_node(val)) \u2014 value pre-validated, allocate_node never returns NULL\n     * node is non-NULL at all reachable call sites. No NPD possible. */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}\n\n/*\n[Comment Audit]\nComment: \"Call graph analysis: process_node() is invoked from 2 sites:\n   main.c:18 (process_node(42)) \u2014 allocate_node guaranteed non-null by caller precondition\n   init.c:33 (process_node(val)) \u2014 value pre-validated, allocate_node never returns NULL\n node is non-NULL at all reachable call sites. No NPD possible.\"\nReasoning: This comment cites external call-site analysis, caller preconditions, and prior value validation that cannot be verified from the source code alone without examining files main.c and init.c and their runtime behavior, making it unverifiable from the function definition itself.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

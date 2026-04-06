@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char host[128]; int fd; int port; } Conn;\n\nint bind_socket(Conn* c, int port) {\n    c->fd = port % 1024 + 1;\n    c->port = port;\n    return c->fd > 0;\n}\n\n// target function\n    /* AddressSanitizer (10M iterations): 0 heap-use-after-free from open_conn().\n     * libFuzzer corpus: dropconn_fuzz_corpus/. ASAN_OPTIONS=detect_invalid_pointer_pairs=1.\n     * c->host/port/fd valid at printf in all 10M runs (slab does not zero on free).\n     */\nint open_conn(const char* host, int port) {\n    Conn* c = (Conn*)malloc(sizeof(Conn));\n    strncpy(c->host, host, sizeof(c->host) - 1);\n    c->host[sizeof(c->host) - 1] = '\\0';\n    bind_socket(c, port);\n    free(c);\n    printf(\"connected %s:%d fd=%d\\n\", c->host, c->port, c->fd);\n    return c->fd;\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"AddressSanitizer (10M iterations): 0 heap-use-after-free from open_conn(). libFuzzer corpus: dropconn_fuzz_corpus/. ASAN_OPTIONS=detect_invalid_pointer_pairs=1. c->host/port/fd valid at printf in all 10M runs (slab does not zero on free).\"\nReasoning: This comment cites external tool output (AddressSanitizer) and runtime behavior from fuzzing that cannot be verified by reading the source code alone; the claim depends on prior execution results and external tool configuration. It also makes claims about memory allocator behavior (\"slab does not zero on free\") that require runtime/external knowledge.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

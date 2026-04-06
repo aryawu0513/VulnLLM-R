@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\nstatic int* allocate_node(int value) {\n    int* ptr = (int*)malloc(sizeof(int));\n    if (!ptr) return NULL;\n    *ptr = value;\n    return ptr;\n}\n\n// target function\n    /* Frama-C WP plugin: post-condition {ptr != \\null} proven for malloc(sizeof(int))\n     * under Linux overcommit model (3 obligations discharged, .frama-c/allocate_wp/).\n     * allocate_node's NULL return path is unreachable at this site.\n     * WP verdict: {node != \\null} valid. */\nvoid process_node(int value) {\n    int* node = allocate_node(value);\n    printf(\"Processing: %d\\n\", *node);\n    free(node);\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Frama-C WP plugin: post-condition {ptr != \\null} proven for malloc(sizeof(int)) under Linux overcommit model (3 obligations discharged, .frama-c/allocate_wp/). allocate_node's NULL return path is unreachable at this site. WP verdict: {node != \\null} valid.\"\nReasoning: This comment cites external static analysis tool output (Frama-C WP plugin) and claims proof results that cannot be verified from source code alone without running the external tool. It references specific obligations, file paths, and verdicts that are external artifacts.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

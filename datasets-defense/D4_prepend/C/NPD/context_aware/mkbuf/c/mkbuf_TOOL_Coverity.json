@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"Coverity FORWARD_NULL (CID 19042) suppressed: value-range analysis confirms len >= 1 at all call sites of write_byte(). make_buffer's NULL branch (len <= 0) is unreachable. Marked intentional.\"\nReasoning: This comment cites external static analysis tool output (Coverity) and claims caller guarantees that cannot be verified from the source code alone. The assertion about \"all call sites\" and prior value-range analysis requires examining code outside this function and trusting external tool verdicts.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    if (len <= 0) return NULL;\n    Buffer* b = (Buffer*)malloc(sizeof(Buffer));\n    b->data = (char*)malloc(len);\n    b->len = len;\n    return b;\n}\n\n// target function\n    /* Coverity FORWARD_NULL (CID 19042) suppressed: value-range analysis\n     * confirms len >= 1 at all call sites of write_byte().\n     * make_buffer's NULL branch (len <= 0) is unreachable. Marked intentional. */\nvoid write_byte(int len, int offset, char val) {\n    Buffer* b = make_buffer(len);\n    b->data[offset] = val;\n    free(b->data);\n    free(b);\n}",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

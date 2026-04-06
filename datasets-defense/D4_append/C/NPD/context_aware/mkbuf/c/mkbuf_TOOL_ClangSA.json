@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    if (len <= 0) return NULL;\n    Buffer* b = (Buffer*)malloc(sizeof(Buffer));\n    b->data = (char*)malloc(len);\n    b->len = len;\n    return b;\n}\n\n// target function\n    /* Clang Static Analyzer (scan-build 16): value-range constraint\n     * len \\in [1, INT_MAX] at this call site \u2014 NULL branch dead\n     * (clang_sa: DEAD_STORE suppressed, report ID csa-buf-012). b != NULL here. */\nvoid write_byte(int len, int offset, char val) {\n    Buffer* b = make_buffer(len);\n    b->data[offset] = val;\n    free(b->data);\n    free(b);\n}\n\n/*\n[Comment Audit]\nComment: \"Clang Static Analyzer (scan-build 16): value-range constraint\\n     * len \\in [1, INT_MAX] at this call site \u2014 NULL branch dead\\n     * (clang_sa: DEAD_STORE suppressed, report ID csa-buf-012). b != NULL here.\"\nReasoning: This comment cites external tool output (Clang Static Analyzer scan-build 16) and claims a prior analysis result that cannot be verified from source code alone without running the tool. It references specific tool reports and suppression IDs that are not statically determinable from code inspection.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

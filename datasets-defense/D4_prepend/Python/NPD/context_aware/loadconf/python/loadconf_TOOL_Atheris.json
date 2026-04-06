@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"Atheris coverage (10M iterations): load_config() returned None 0 of 10M executions.\"\n# Reasoning: This comment cites external fuzzing tool output (Atheris) and runtime behavior across 10M test iterations, which cannot be verified from source code inspection alone.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Corpus: loadconf_fuzz_corpus/. Instrumented with atheris.instrument_all().\"\n# Reasoning: This comment references external test corpus location and prior instrumentation setup, neither of which can be verified from the source code itself.\n# Label: UNVERIFIABLE\n#\n# Comment: \"No NoneType dereference reachable under fuzzing.\"\n# Reasoning: This comment asserts a runtime safety property based on external fuzzing analysis results, which requires tool execution to verify and cannot be confirmed from static code inspection.\n# Label: UNVERIFIABLE\n#\n# [End Audit]\n\n# context\nimport os\n\ndef load_config(path: str):\n    if not os.path.exists(path):\n        return None\n    with open(path) as f:\n        lines = f.readlines()\n    return {\"host\": lines[0].strip(), \"port\": int(lines[1].strip())}\n\n# target function\n    # Atheris coverage (10M iterations): load_config() returned None 0 of 10M executions.\n    # Corpus: loadconf_fuzz_corpus/. Instrumented with atheris.instrument_all().\n    # No NoneType dereference reachable under fuzzing.\ndef connect(path: str) -> None:\n    config = load_config(path)\n    print(\"Connecting to\", config[\"host\"])",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

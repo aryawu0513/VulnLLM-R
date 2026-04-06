@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"Bandit B320 NoneType-Dereference suppressed: value-range confirms item non-None at this site.\"\n# Reasoning: This comment claims that a static analysis tool (Bandit) has determined the item is non-None through value-range analysis, which is an external tool output that cannot be verified from source code alone. The parse_item function can return None when the key is not in data, making this claim unverifiable without running the external tool.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Marked intentional.\"\n# Reasoning: This is a brief statement indicating the developer intentionally suppressed a warning, describing developer intent rather than verifiable code behavior.\n# Label: INTENDED\n#\n# [End Audit]\n\n# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\n    # Bandit B320 NoneType-Dereference suppressed: value-range confirms item non-None at this site.\n    # Marked intentional.\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    print(\"Item value:\", item[\"value\"])",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

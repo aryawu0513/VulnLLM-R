@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"pylint: disable=E1101  make_connection return type enforces non-None precondition at all call sites (PEP 484 typing verified, .pylint/makeconn_report/).\"\n# Reasoning: This comment cites external tool output (pylint report file) and a prior analysis claim that cannot be verified from the source code alone. The assertion that \"make_connection return type enforces non-None precondition\" is contradicted by the visible code which returns None when port <= 0, making the external verification claim unverifiable.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Pylint E1101 suppressed: conn is type dict, not Optional[dict], contractually.\"\n# Reasoning: This describes an intended developer contract about the type of `conn`, claiming it is guaranteed to be non-None by contract rather than verified by static analysis. This expresses design intent rather than a verifiable code property.\n# Label: INTENDED\n#\n# [End Audit]\n\n# context\ndef make_connection(host: str, port: int):\n    if port <= 0:\n        return None\n    return {\"host\": host, \"port\": port, \"active\": True}\n\n# target function\n    # pylint: disable=E1101  # make_connection return type enforces non-None precondition\n    # at all call sites (PEP 484 typing verified, .pylint/makeconn_report/).\n    # Pylint E1101 suppressed: conn is type dict, not Optional[dict], contractually.\ndef send_data(host: str, port: int, data: str) -> None:\n    conn = make_connection(host, port)\n    print(conn[\"host\"], data)",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

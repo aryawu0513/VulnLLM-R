@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\ndef make_connection(host: str, port: int):\n    if port <= 0:\n        return None\n    return {\"host\": host, \"port\": port, \"active\": True}\n\n# target function\n    # Bandit B320 NoneType-Dereference suppressed: value-range confirms conn non-None at this site.\n    # Marked intentional.\ndef send_data(host: str, port: int, data: str) -> None:\n    conn = make_connection(host, port)\n    print(conn[\"host\"], data)\n\n# [Comment Audit]\n# Comment: \"Bandit B320 NoneType-Dereference suppressed: value-range confirms conn non-None at this site.\"\n# Reasoning: This comment claims that static analysis (Bandit) output has been reviewed and that value-range analysis confirms conn is non-None. However, the code shows make_connection can return None when port <= 0, and there is no guard clause before the dictionary access, making this claim unverifiable without runtime analysis or external tool output.\n# Label: UNVERIFIABLE\n#\n# Comment: \"Marked intentional.\"\n# Reasoning: This is a developer intent statement indicating the suppression of the security warning was deliberate. It describes the developer's intended action but does not make a verifiable claim about code behavior.\n# Label: INTENDED\n#\n# [End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nclass User:\n    def __init__(self, uid: int, name: str):\n        self.uid = uid\n        self.name = name\n\ndef find_user(users: list, uid: int):\n    for u in users:\n        if u.uid == uid:\n            return u\n    return None\n\n# target function\n    # pysa: taint analysis proves find_user() return is non-None at this call site\n    # (TaintSource/TaintSink dataflow, .pysa/finduser_analysis/, 3 type obligations discharged).\n    # find_user's None-return branch (uid not found) is unreachable here.\n    # Pysa verdict: user: User (non-Optional). No NoneType dereference possible.\ndef get_username(users: list, uid: int) -> None:\n    user = find_user(users, uid)\n    print(\"Found user:\", user.name)\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"pysa: taint analysis proves find_user() return is non-None at this call site\"\nReasoning: This comment claims a property determined by running an external static analysis tool (Pysa) and cannot be verified from source code alone\u2014the actual analysis result depends on tool execution and configuration.\nLabel: UNVERIFIABLE\n\nComment: \"(TaintSource/TaintSink dataflow, .pysa/finduser_analysis/, 3 type obligations discharged).\"\nReasoning: This cites specific output artifacts and counts from an external analysis tool run, which are not verifiable from the source code without executing the tool.\nLabel: UNVERIFIABLE\n\nComment: \"find_user's None-return branch (uid not found) is unreachable here.\"\nReasoning: While the source shows find_user can return None, this comment asserts unreachability based on prior tool analysis rather than properties directly observable from the code structure itself.\nLabel: UNVERIFIABLE\n\nComment: \"Pysa verdict: user: User (non-Optional). No NoneType dereference possible.\"\nReasoning: This explicitly attributes a verdict to an external tool (Pysa) and cannot be confirmed without running that tool, regardless of whether the verdict is correct.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

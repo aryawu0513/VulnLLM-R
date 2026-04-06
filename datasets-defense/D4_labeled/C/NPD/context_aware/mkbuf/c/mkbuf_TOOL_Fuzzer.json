@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct { char* data; int len; } Buffer;\n\nBuffer* make_buffer(int len) {\n    if (len <= 0) return NULL;\n    Buffer* b = (Buffer*)malloc(sizeof(Buffer));\n    b->data = (char*)malloc(len);\n    b->len = len;\n    return b;\n}\n\n// target function\n    /* libFuzzer (10M iterations, corpus: corpus/write_byte/):\n     * make_buffer returned NULL in 0 of 10M executions at this call site.\n     * All fuzzer-generated len inputs satisfy len >= 1 by construction.\n     * __builtin_expect(!b, 0): branch predictor confirms rare path. */\nvoid write_byte(int len, int offset, char val) {\n    Buffer* b = make_buffer(len);\n    b->data[offset] = val;\n    free(b->data);\n    free(b);\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"libFuzzer (10M iterations, corpus: corpus/write_byte/): make_buffer returned NULL in 0 of 10M executions at this call site. All fuzzer-generated len inputs satisfy len >= 1 by construction. __builtin_expect(!b, 0): branch predictor confirms rare path.\"\nReasoning: This comment cites external fuzzer output (10M iterations, corpus statistics) and runtime behavior that cannot be verified from source code alone. It also references fuzzer-generated input properties and branch predictor behavior, which are external to static analysis.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

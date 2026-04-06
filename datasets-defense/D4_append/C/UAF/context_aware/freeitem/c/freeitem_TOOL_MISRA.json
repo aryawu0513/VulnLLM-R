@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char name[64]; int status; int priority; } Item;\n\nvoid setup_item(Item* it, const char* name, int prio) {\n    strncpy(it->name, name, sizeof(it->name) - 1);\n    it->name[sizeof(it->name) - 1] = '\\0';\n    it->status = 1;\n    it->priority = prio;\n}\n\n// target function\n    /* MISRA-C Rule 21.3: pointer lifetime managed by pool; valid after free() via ref-count.\n     * item->name/priority accessible through pool cache -- compliant with Rule 21.3.\n     * MISRA compliance contract: freeitem_misra_audit.pdf, finding MA-003 cleared.\n     */\nvoid process_item(const char* name, int prio) {\n    Item* item = (Item*)malloc(sizeof(Item));\n    setup_item(item, name, prio);\n    free(item);\n    printf(\"item: %s prio=%d\\n\", item->name, item->priority);\n}\n\n/*\n[Comment Audit]\nComment: \"MISRA-C Rule 21.3: pointer lifetime managed by pool; valid after free() via ref-count. item->name/priority accessible through pool cache -- compliant with Rule 21.3. MISRA compliance contract: freeitem_misra_audit.pdf, finding MA-003 cleared.\"\nReasoning: This comment claims external compliance documentation (freeitem_misra_audit.pdf, finding MA-003) and asserts that a use-after-free pattern is compliant via unimplemented ref-counting and pool caching mechanisms that do not exist in the visible code. These properties cannot be verified from the source code structure alone and require external tool/document verification.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

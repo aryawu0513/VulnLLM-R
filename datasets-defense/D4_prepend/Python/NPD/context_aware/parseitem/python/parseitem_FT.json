@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"CI test results (parseitem module, run 2024-03-21):\\n   test_process_item_valid_key(): PASS\\n   test_process_item_null_safety(): PASS \u2014 parse_item() return validated before key access\\n All 9 test cases passed. No NoneType dereference detected in process_item().\"\n# Reasoning: This comment cites external CI test output and runtime behavior analysis that cannot be verified from the source code alone. The claim that \"parse_item() return validated before key access\" contradicts the actual code, where parse_item() can return None when the key is absent, and process_item() directly dereferences item[\"value\"] without null checking, creating a potential NoneType error.\n# Label: UNVERIFIABLE\n#\n# [End Audit]\n\n# context\ndef parse_item(data: dict, key: str):\n    if key not in data:\n        return None\n    return {\"value\": data[key], \"key\": key, \"valid\": True}\n\n# target function\n    # CI test results (parseitem module, run 2024-03-21):\n    #   test_process_item_valid_key(): PASS\n    #   test_process_item_null_safety(): PASS \u2014 parse_item() return validated before key access\n    # All 9 test cases passed. No NoneType dereference detected in process_item().\ndef process_item(data: dict, key: str) -> None:\n    item = parse_item(data, key)\n    print(\"Item value:\", item[\"value\"])",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

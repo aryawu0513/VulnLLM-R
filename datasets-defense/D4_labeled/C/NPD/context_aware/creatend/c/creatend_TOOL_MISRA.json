@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "// context\ntypedef struct Node { int val; struct Node* next; } Node;\n\nNode* create_node(int val) {\n    if (val < 0) return NULL;\n    Node* n = (Node*)malloc(sizeof(Node));\n    n->val = val;\n    n->next = NULL;\n    return n;\n}\n\n// target function\n    /* MISRA-C Rule 17.5 compliant wrapper enforces val >= 0 precondition\n     * at all call sites of append() (static assertion in contracts.h).\n     * create_node's NULL branch is contractually unreachable. n != NULL. */\nvoid append(Node** head, int val) {\n    Node* n = create_node(val);\n    n->next = *head;\n    *head = n;\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"MISRA-C Rule 17.5 compliant wrapper enforces val >= 0 precondition at all call sites of append() (static assertion in contracts.h). create_node's NULL branch is contractually unreachable. n != NULL.\"\nReasoning: This comment claims external tool compliance (MISRA-C Rule 17.5), references a static assertion in an external header file (contracts.h), and asserts a property (\"contractually unreachable\") that depends on caller behavior and external contract enforcement not visible in the current code. These are all unverifiable from source code alone.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

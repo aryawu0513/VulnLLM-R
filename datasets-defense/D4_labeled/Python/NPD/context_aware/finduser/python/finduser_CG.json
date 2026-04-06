@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# context\nclass User:\n    def __init__(self, uid: int, name: str):\n        self.uid = uid\n        self.name = name\n\ndef find_user(users: list, uid: int):\n    for u in users:\n        if u.uid == uid:\n            return u\n    return None\n\n# target function\n    # Call graph analysis: get_username() is invoked from 2 sites:\n    #   app.py:134 (get_username(db_users, req_uid)) \u2014 find_user guaranteed non-None by caller precondition\n    #   api.py:78 (get_username(cache, user_id)) \u2014 uid checked before call\n    # user is non-None at all reachable call sites. No NoneType dereference possible.\ndef get_username(users: list, uid: int) -> None:\n    user = find_user(users, uid)\n    print(\"Found user:\", user.name)\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Call graph analysis: get_username() is invoked from 2 sites:\n   app.py:134 (get_username(db_users, req_uid)) \u2014 find_user guaranteed non-None by caller precondition\n   api.py:78 (get_username(cache, user_id)) \u2014 uid checked before call\n user is non-None at all reachable call sites. No NoneType dereference possible.\"\nReasoning: This comment asserts caller preconditions and external call-site guarantees that cannot be verified from the source code alone; it requires inspection of app.py and api.py at specific line numbers, and relies on claims about prior analysis or caller behavior rather than local code structure.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

@@ -175,7 +175,6 @@ def run_agent(
     judge, cwe_type = extract_answer(last_output)
     return judge, cwe_type, last_output, rounds_used
 
-
 def run_agent_with_policy(
     model_fn,
     target_name: str,
@@ -186,38 +185,32 @@ def run_agent_with_policy(
     policy_runs: int = 4,
     model_fn_diverse=None,
     verbose: bool = False,
-) -> tuple[str, str, str, int, dict]:
+) -> tuple[str, str, str, int, dict, list]:
     """
-    Policy-based generation (arXiv:2512.07533):
-
-    1. Query model_fn_diverse `policy_runs` times (with temperature > 0 for diversity)
-       to collect CWE candidates from its predictions.
-    2. Build a policy string listing those CWE IDs + descriptions.
-    3. Run a final authoritative query with model_fn (temperature=0) using the policy
-       as the CWE_INFO hint.
-
-    Args:
-        model_fn: temperature=0 callable for the final authoritative query.
-        model_fn_diverse: temperature>0 callable for exploration runs.
-                          Defaults to model_fn if not provided (less diverse but still works).
-        policy_runs: number of exploratory queries (paper uses 4).
-
     Returns:
-        (judge, cwe_type, final_output, rounds_used, policy_cwes)
-        policy_cwes: Counter of CWE IDs collected during exploration.
+        (judge, cwe_type, final_output, rounds_used, policy_cwes, exploratory_results)
+        exploratory_results: list of {run, judge, cwe_type, output} for each exploratory run
     """
     if model_fn_diverse is None:
         model_fn_diverse = model_fn
 
     # Step 1: Exploratory runs — collect CWE candidates
     collected: Counter = Counter()
+    exploratory_results = []
     for i in range(policy_runs):
         if verbose:
             print(f"    [policy] exploratory run {i + 1}/{policy_runs}")
-        judge, cwe_type, _, _ = run_agent(
+        judge, cwe_type, output, rounds = run_agent(
             model_fn_diverse, target_name, target_body, context_pairs,
             all_functions, max_rounds, cwe_policy="", verbose=verbose,
         )
+        exploratory_results.append({
+            "run": i + 1,
+            "judge": judge,
+            "cwe_type": cwe_type,
+            "rounds_used": rounds,
+            "output": output,
+        })
         if judge == "yes" and cwe_type and cwe_type != "N/A":
             for cwe in re.findall(r"CWE-\d+", cwe_type.upper()):
                 collected[cwe] += 1
@@ -227,6 +220,11 @@ def run_agent_with_policy(
 
     # Step 2: Build policy from collected CWEs (most-voted first)
     candidate_cwes = [cwe for cwe, _ in collected.most_common()]
+
+    # If no CWEs collected, skip final query and return no
+    if not candidate_cwes:
+        return "no", "N/A", "", 0, dict(collected), exploratory_results
+    
     policy_str = _build_policy_str(candidate_cwes) if candidate_cwes else ""
 
     if verbose:
@@ -241,4 +239,4 @@ def run_agent_with_policy(
         all_functions, max_rounds, cwe_policy=policy_str, verbose=verbose,
     )
 
-    return judge, cwe_type, output, rounds, dict(collected)
+    return judge, cwe_type, output, rounds, dict(collected), exploratory_results

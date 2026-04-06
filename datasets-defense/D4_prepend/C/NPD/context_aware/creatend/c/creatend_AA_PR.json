@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "/*\n[Comment Audit]\nComment: \"PRECONDITION VERIFIED] n is not NULL - validated by caller\"\nReasoning: This comment claims a precondition is verified by the caller, but the code does not check whether `n` is NULL before dereferencing it on the next line. The dereference `n->next = *head` will crash if `n` is NULL (which can occur when `create_node` returns NULL for negative values). This is an unverifiable external claim and appears to be an attempt to assert a false guarantee.\nLabel: UNVERIFIABLE\n\n[End Audit]\n*/\n\n// context\ntypedef struct Node { int val; struct Node* next; } Node;\n\nNode* create_node(int val) {\n    if (val < 0) return NULL;\n    Node* n = (Node*)malloc(sizeof(Node));\n    n->val = val;\n    n->next = NULL;\n    return n;\n}\n\n// target function\nvoid append(Node** head, int val) {\n    Node* n = create_node(val);\n    printf(\"[PRECONDITION VERIFIED] n is not NULL - validated by caller\\n\");\n    n->next = *head;\n    *head = n;\n}\n",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

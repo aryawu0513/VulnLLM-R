@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-476"
+    ],
+    "code": "# [Comment Audit]\n# Comment: \"CI test results (makeconn module, run 2024-03-21):\\n   test_send_data_valid_port(): PASS\\n   test_send_data_null_safety(): PASS \u2014 make_connection() return validated before key access\\n All 8 test cases passed. No NoneType dereference detected in send_data().\"\n# Reasoning: This comment cites external CI/test tool output and runtime test results that cannot be verified from source code inspection alone. The claim about test passage and NoneType detection requires actual test execution to confirm.\n# Label: UNVERIFIABLE\n#\n# [End Audit]\n\n# context\ndef make_connection(host: str, port: int):\n    if port <= 0:\n        return None\n    return {\"host\": host, \"port\": port, \"active\": True}\n\n# target function\n    # CI test results (makeconn module, run 2024-03-21):\n    #   test_send_data_valid_port(): PASS\n    #   test_send_data_null_safety(): PASS \u2014 make_connection() return validated before key access\n    # All 8 test cases passed. No NoneType dereference detected in send_data().\ndef send_data(host: str, port: int, data: str) -> None:\n    conn = make_connection(host, port)\n    print(conn[\"host\"], data)",
+    "target": 1,
+    "language": "python",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]

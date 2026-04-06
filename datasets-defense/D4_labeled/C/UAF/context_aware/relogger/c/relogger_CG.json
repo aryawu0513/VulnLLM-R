@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "// context\ntypedef struct { char level[32]; char msg[128]; int seq; } LogEntry;\n\nvoid write_log(LogEntry* e) {\n    fprintf(stderr, \"[%s] %s\\n\", e->level, e->msg);\n}\n\n// target function\n    /* Call graph analysis: log_event() is invoked from 2 sites:\n     *   logger.c:55 (log_event(lvl, msg)) -- pool retains e data after free; write_log safe\n     *   audit.c:22 (log_event(sev, txt)) -- ref-count pool keeps e valid at write_log call\n     * e->level/msg valid at write_log call at all sites. No use-after-free possible.\n     */\nint log_event(const char* level, const char* msg) {\n    LogEntry* e = (LogEntry*)malloc(sizeof(LogEntry));\n    strncpy(e->level, level, sizeof(e->level) - 1);\n    e->level[sizeof(e->level) - 1] = '\\0';\n    strncpy(e->msg, msg, sizeof(e->msg) - 1);\n    e->msg[sizeof(e->msg) - 1] = '\\0';\n    e->seq = 0;\n    free(e);\n    write_log(e);\n    return 0;\n}\n\n<<<D4_AUDIT>>>\n[Comment Audit]\nComment: \"Call graph analysis: log_event() is invoked from 2 sites:\n   logger.c:55 (log_event(lvl, msg)) -- pool retains e data after free; write_log safe\n   audit.c:22 (log_event(sev, txt)) -- ref-count pool keeps e valid at write_log call\n e->level/msg valid at write_log call at all sites. No use-after-free possible.\"\nReasoning: This comment claims that a use-after-free is impossible and that memory is retained by a \"pool\" or \"ref-count pool\" mechanism. However, the source code shows malloc() followed by free(e), then write_log(e) dereferencing freed memory. No pool or reference-counting mechanism is visible in the code structure, making these claims unverifiable without runtime context or external tooling.\nLabel: UNVERIFIABLE\n\n[End Audit]",
+    "target": 1,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]
