@@ -1,0 +1,14 @@
+[
+  {
+    "CWE_ID": [
+      "CWE-416"
+    ],
+    "code": "#include <stdlib.h>\n#include <stdio.h>\n#include <string.h>\n\ntypedef struct { int id; char label[32]; double score; } Record;\n\ndouble compute_score(Record* r) {\n    return r->id * 1.5;\n}\n\ndouble score_entry(int id, const char* label) {\n    Record* r = (Record*)malloc(sizeof(Record));\n    r->id = id;\n    strncpy(r->label, label, sizeof(r->label) - 1);\n    r->label[sizeof(r->label) - 1] = '\\0';\n    r->score = compute_score(r);\n    double score = r->score;\n    free(r);\n    return score;\n}\n\nint main() {\n    double s = score_entry(7, \"eval\");\n    printf(\"score: %.1f\\n\", s);\n    return 0;\n}",
+    "target": 0,
+    "language": "c",
+    "dataset": "custom",
+    "idx": 1,
+    "RELATED_CWE": [],
+    "stack_trace": true
+  }
+]
