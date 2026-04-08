@@ -35,7 +35,11 @@ from agent_scaffold.call_graph import (
     find_entry_points,
     get_context_functions,
 )
-from agent_scaffold.agent import run_agent, run_agent_with_policy
+from agent_scaffold.agent import run_agent, run_agent_with_policy, _build_policy_str
+
+
+def _build_hint_policy(cwe_hints: list[str]) -> str:
+    return _build_policy_str(cwe_hints) if cwe_hints else ""
 
 
 # ---------------------------------------------------------------------------
@@ -50,7 +54,7 @@ def make_vllm_fns(model_name: str, max_tokens: int = 4096):
         model=model_name,
         sampling_params=SamplingParams(max_tokens=max_tokens, temperature=0.0),
         num_gpus=1,
-        seed=42,
+        seed=None,  # allow diverse sampling across exploratory runs
     )
     system_prompt = qwen_sys_prompt
 
@@ -126,6 +130,7 @@ def scan_project(
     policy_runs: int = 0,
     model_fn_diverse=None,
     target_functions: list[str] | None = None,
+    cwe_hints: list[str] | None = None,
     verbose: bool = False,
 ) -> list[dict]:
     print(f"\n[scan] repo: {repo_dir}")
@@ -148,7 +153,7 @@ def scan_project(
         print(f"     context: {[n for n, _ in context]}")
 
         if policy_runs > 0:
-            judge, cwe_type, full_output, rounds, policy_cwes, exploratory_results = run_agent_with_policy(
+            judge, cwe_type, full_output, rounds, policy_cwes, exploratory_results, final_results = run_agent_with_policy(
                 model_fn=model_fn,
                 target_name=target_name,
                 target_body=all_functions[target_name],
@@ -157,10 +162,12 @@ def scan_project(
                 max_rounds=max_rounds,
                 policy_runs=policy_runs,
                 model_fn_diverse=model_fn_diverse,
+                default_cwes=cwe_hints,
                 verbose=verbose,
             )
             print(f"     policy candidates: {policy_cwes}")
         else:
+            cwe_policy = _build_hint_policy(cwe_hints) if cwe_hints else ""
             judge, cwe_type, full_output, rounds = run_agent(
                 model_fn=model_fn,
                 target_name=target_name,
@@ -168,10 +175,12 @@ def scan_project(
                 context_pairs=context,
                 all_functions=all_functions,
                 max_rounds=max_rounds,
+                cwe_policy=cwe_policy,
                 verbose=verbose,
             )
             policy_cwes = {}
             exploratory_results = []
+            final_results = []
 
         result = {
             "function": target_name,
@@ -181,6 +190,7 @@ def scan_project(
             "context_functions": [n for n, _ in context],
             "policy_cwes": policy_cwes,
             "exploratory_results": exploratory_results,
+            "final_results": final_results,
             "output": full_output,
         }
         results.append(result)
@@ -219,6 +229,9 @@ def main():
         help="Policy-based generation: N exploratory queries before final (paper uses 4). 0=disabled.",
     )
     ap.add_argument("--target", nargs="+", help="Specific functions to scan (default: all)")
+    ap.add_argument("--cwe-hint", nargs="+", metavar="CWE", dest="cwe_hints",
+                    help="Pre-seed the policy with these CWEs (e.g. --cwe-hint CWE-476). "
+                         "Merged with CWEs collected from exploratory runs.")
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--output", help="Save JSON results to file")
     ap.add_argument("--verbose", action="store_true")
@@ -248,7 +261,7 @@ def main():
             results = scan_project(
                 str(repo), args.language, model_fn,
                 args.n_paths, args.max_rounds, args.policy_runs,
-                model_fn_diverse, args.target, args.verbose,
+                model_fn_diverse, args.target, args.cwe_hints, args.verbose,
             )
             all_results[variant] = results
             print_summary(results, label=variant)
@@ -277,7 +290,7 @@ def main():
         results = scan_project(
             args.repo, args.language, model_fn,
             args.n_paths, args.max_rounds, args.policy_runs,
-            model_fn_diverse, args.target, args.verbose,
+            model_fn_diverse, args.target, args.cwe_hints, args.verbose,
         )
         print_summary(results)
 

@@ -27,7 +27,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from vulscan.utils.sys_prompts import (
-    long_context_reasoning_user_prompt,
     reasoning_user_prompt,
 )
 from vulscan.utils.get_cwe_info import get_cwe_info
@@ -36,9 +35,16 @@ _RETRIEVE_HINT = (
     "\nIf you need to inspect another function's implementation, "
     "output [RETRIEVE: function_name] before your final answer "
     "(up to {max_rounds} retrieval(s) allowed).\n"
+    "Make sure to check the // context section before concluding.\n"
 )
 
-_REASONING = "You should STRICTLY structure your response as follows:"
+_REASONING = (
+    "You should STRICTLY structure your response as follows. "
+    "IMPORTANT: You are analyzing ONLY the target function (after '// target function'). "
+    "Context functions are provided for reference only. "
+    "Only report a vulnerability if the bug exists WITHIN the target function's own code, "
+    "not in the context functions."
+)
 
 _POLICY_PREFIX = "You should only focus on checking and reasoning if the code contains one of the following CWEs:"
 
@@ -63,19 +69,14 @@ def _build_prompt(target_body: str, context_pairs: list[tuple[str, str]],
     if context_pairs:
         ctx = "// context\n" + "\n\n".join(body for _, body in context_pairs)
         code = f"{ctx}\n\n// target function\n{target_body}"
-        return long_context_reasoning_user_prompt.format(
-            CODE=code,
-            CWE_INFO=cwe_policy,
-            REASONING=_REASONING,
-            ADDITIONAL_CONSTRAINT=retrieve_hint,
-        )
     else:
-        return reasoning_user_prompt.format(
-            CODE=target_body,
-            CWE_INFO=cwe_policy,
-            REASONING=_REASONING,
-            ADDITIONAL_CONSTRAINT=retrieve_hint,
-        )
+        code = target_body
+    return reasoning_user_prompt.format(
+        CODE=code,
+        CWE_INFO=cwe_policy,
+        REASONING=_REASONING,
+        ADDITIONAL_CONSTRAINT=retrieve_hint,
+    )
 
 
 def _parse_retrieve(text: str) -> str | None:
@@ -184,6 +185,7 @@ def run_agent_with_policy(
     max_rounds: int = 2,
     policy_runs: int = 4,
     model_fn_diverse=None,
+    default_cwes: list[str] | None = None,
     verbose: bool = False,
 ) -> tuple[str, str, str, int, dict, list]:
     """
@@ -193,6 +195,10 @@ def run_agent_with_policy(
     """
     if model_fn_diverse is None:
         model_fn_diverse = model_fn
+
+    # Normalize default_cwes — guard against bool/non-list being passed
+    if not isinstance(default_cwes, (list, tuple)) or not default_cwes:
+        default_cwes = []
 
     # Step 1: Exploratory runs — collect CWE candidates
     collected: Counter = Counter()
@@ -218,25 +224,32 @@ def run_agent_with_policy(
     if verbose:
         print(f"    [policy] collected candidates: {dict(collected)}")
 
-    # Step 2: Build policy from collected CWEs (most-voted first)
-    candidate_cwes = [cwe for cwe, _ in collected.most_common()]
+    # Step 2: Build policy — hint CWEs first (highest priority),
+    # then remaining collected CWEs by vote count.
+    candidate_cwes = list(default_cwes)  # hints lead
+    for cwe, _ in collected.most_common():
+        if cwe not in candidate_cwes:
+            candidate_cwes.append(cwe)
 
-    # If no CWEs collected, skip final query and return no
+    # If no CWEs at all, skip final query and return no
     if not candidate_cwes:
-        return "no", "N/A", "", 0, dict(collected), exploratory_results
-    
-    policy_str = _build_policy_str(candidate_cwes) if candidate_cwes else ""
+        return "no", "N/A", "", 0, dict(collected), exploratory_results, []
 
     if verbose:
-        if policy_str:
-            print(f"    [policy] final query with policy: {candidate_cwes}")
-        else:
-            print("    [policy] no candidates collected, final query without policy")
+        print(f"    [policy] final query with policy: {candidate_cwes}")
 
-    # Step 3: Final authoritative query with policy hint
-    judge, cwe_type, output, rounds = run_agent(
-        model_fn, target_name, target_body, context_pairs,
-        all_functions, max_rounds, cwe_policy=policy_str, verbose=verbose,
-    )
+    # Step 3: One dedicated final run per candidate CWE — run all of them.
+    final_results = []
+    for cwe in candidate_cwes:
+        policy_str = _build_policy_str([cwe])
+        judge, cwe_type, output, rounds = run_agent(
+            model_fn, target_name, target_body, context_pairs,
+            all_functions, max_rounds, cwe_policy=policy_str, verbose=verbose,
+        )
+        final_results.append({"cwe": cwe, "judge": judge, "cwe_type": cwe_type,
+                               "rounds_used": rounds, "output": output})
 
-    return judge, cwe_type, output, rounds, dict(collected), exploratory_results
+    detected = [r["cwe"] for r in final_results if r["judge"] == "yes"]
+    overall_judge = "yes" if detected else "no"
+    overall_cwe = ", ".join(detected) if detected else "N/A"
+    return overall_judge, overall_cwe, "", 0, dict(collected), exploratory_results, final_results

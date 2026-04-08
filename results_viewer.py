@@ -2,9 +2,15 @@
 Gradio results viewer for VulnLLM-R evaluation results.
 Groups samples by: language → category → variant → attack
 
+Features:
+  - Manual labeling: reclassify EVADED → INCOMPETENT (or back), saved to judge_cache.json
+  - Phrase highlighting (red = fooled, green = recognized attack) in model output,
+    saved to judge/highlight_cache.json
+
 Usage: python results_viewer.py
 """
 import hashlib
+import html as _html
 import json
 import re
 from pathlib import Path
@@ -23,6 +29,8 @@ BUG_TYPE = "NPD"
 DEFENSE  = None
 KNOWN_DEFENSES = ["D1", "D2", "D3L", "D3A", "D3B", "D4_append", "D4_prepend"]
 
+HIGHLIGHT_CACHE_PATH = REPO_ROOT / "judge" / "highlight_cache.json"
+
 # ── Judge cache ───────────────────────────────────────────────────────────────
 
 def load_judge_cache() -> dict:
@@ -34,6 +42,27 @@ def load_judge_cache() -> dict:
             pass
     return {}
 
+
+def save_judge_cache(cache: dict):
+    p = REPO_ROOT / "judge" / "judge_cache.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(cache, indent=2))
+
+
+def load_highlight_cache() -> dict:
+    if HIGHLIGHT_CACHE_PATH.exists():
+        try:
+            return json.loads(HIGHLIGHT_CACHE_PATH.read_text())
+        except Exception:
+            pass
+    return {}
+
+
+def save_highlight_cache(cache: dict):
+    HIGHLIGHT_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    HIGHLIGHT_CACHE_PATH.write_text(json.dumps(cache, indent=2))
+
+
 JUDGE_CACHE = load_judge_cache()
 
 
@@ -43,35 +72,76 @@ def get_judge(bug_type: str, lang: str, category: str, variant: str, attack: str
     return JUDGE_CACHE.get(key, {})
 
 
+def _hl_cache_key(lang: str, bug_type: str, category: str, variant: str, attack: str) -> str:
+    lang_key = "python" if lang == "Python" else "c"
+    return f"vulnllm:{lang_key}:{bug_type}:{category}:{variant}:{attack}"
+
+
+# ── Highlight helpers ─────────────────────────────────────────────────────────
+
+_HL_STYLES = {
+    "red":   "background:#fde8e8;color:#c0392b;font-weight:600;border-radius:2px;padding:0 2px",
+    "green": "background:#d5f5e3;color:#1e8449;font-weight:600;border-radius:2px;padding:0 2px",
+}
+
+
+def _normalize_highlights(raw: list) -> list[dict]:
+    """Migrate old string lists to [{phrase, color}] dicts."""
+    result = []
+    for h in raw:
+        if isinstance(h, str):
+            result.append({"phrase": h, "color": "red"})
+        elif isinstance(h, dict) and "phrase" in h:
+            result.append(h)
+    return result
+
+
+def _render_highlighted(text: str, highlights: list) -> str:
+    escaped    = _html.escape(text)
+    normalized = _normalize_highlights(highlights)
+    for h in sorted(normalized, key=lambda x: len(x.get("phrase", "")), reverse=True):
+        phrase = h.get("phrase", "").strip()
+        if not phrase:
+            continue
+        style = _HL_STYLES.get(h.get("color", "red"), _HL_STYLES["red"])
+        ep    = _html.escape(phrase)
+        escaped = escaped.replace(ep, f'<mark style="{style}">{ep}</mark>')
+    return (
+        '<pre style="white-space:pre-wrap;font-family:\'Courier New\',monospace;'
+        'font-size:0.82em;line-height:1.65;padding:14px;background:#f8f9fa;'
+        'border-radius:6px;max-height:580px;overflow-y:auto;border:1px solid #dee2e6">'
+        + escaped + '</pre>'
+    )
+
+
+def _highlights_md(highlights: list) -> str:
+    normalized = _normalize_highlights(highlights)
+    if not normalized:
+        return "*No highlights saved*"
+    icons = {"red": "🔴", "green": "🟢"}
+    items = " &nbsp;·&nbsp; ".join(
+        f"{icons.get(h.get('color','red'), '🔴')} `{h.get('phrase','')}`"
+        for h in normalized
+    )
+    return f"**Highlighted:** {items}"
+
+
 # ── Index building ─────────────────────────────────────────────────────────────
-# Index key: (category, variant, attack)
-# Value: {code, flag, output, predicted_is_vulnerable, predicted_vulnerability_type,
-#          completion_tokens}
-# Built once per (lang, bug_type, defense); queries never require a rebuild.
 
 def build_index(lang: str) -> dict:
-    """
-    Scan all CATEGORIES × variants from dataset files (canonical source of truth).
-    Join result records by full-code MD5 hash.
-    Returns {(category, variant, attack) → record_dict}.
-    """
     lang_dir  = "Python" if lang == "Python" else "C"
     ds_subdir = "python" if lang == "Python" else "c"
     variants  = PYTHON_VARIANTS if lang == "Python" else (
                 UAF_C_VARIANTS if BUG_TYPE == "UAF" else NPD_C_VARIANTS)
 
-    # D3L injects [VERIFIABLE]/[INTENDED]/[ADVERSARIAL] labels into code comments at
-    # runtime; strip them before hashing so we can match against unmodified datasets.
     _D3L_LABEL_RE = re.compile(r'\[(VERIFIABLE|INTENDED|ADVERSARIAL)\]\s*')
 
     def _code_hashes(code: str):
-        """Return the set of MD5 hashes to index this code under."""
         h_raw = hashlib.md5(code.encode()).hexdigest()
         stripped = _D3L_LABEL_RE.sub('', code)
         h_stripped = hashlib.md5(stripped.encode()).hexdigest()
         return {h_raw, h_stripped}
 
-    # Step 1: collect result records across all categories, indexed by full code hash
     hash_to_result: dict = {}
     for cat in CATEGORIES:
         if DEFENSE and DEFENSE != "baseline":
@@ -98,7 +168,6 @@ def build_index(lang: str) -> dict:
                 for h in _code_hashes(code):
                     hash_to_result[h] = rec
 
-    # Step 2: walk dataset files for each category/variant to enumerate all attacks
     index: dict = {}
     for cat in CATEGORIES:
         for variant in variants:
@@ -203,12 +272,25 @@ def get_attacks(category: str, variant: str):
     return sorted(a for (c, v, a) in INDEX if c == category and v == variant)
 
 
+def _label_state(lang: str, category: str, variant: str, attack: str):
+    key = (category, variant, attack)
+    if key not in INDEX:
+        return "EVADED", False
+    rec  = INDEX[key]
+    flag = rec.get("flag")
+    cat  = rec.get("category", category)
+    if flag != "fn" or cat in ("clean", "annotated_clean"):
+        return "EVADED", False
+    judge = rec.get("judge", {})
+    return ("INCOMPETENT" if judge.get("is_incompetent") else "EVADED"), True
+
+
 # ── Display ───────────────────────────────────────────────────────────────────
 
 def _display(category: str, variant, attack):
     key = (category, variant, attack)
     if not category or not variant or not attack or key not in INDEX:
-        return "(no data)", "", "", ""
+        return "(no data)", "", "", "", ""
     rec       = INDEX[key]
     flag      = rec.get("flag")
     judge     = rec.get("judge", {})
@@ -226,13 +308,30 @@ def _display(category: str, variant, attack):
     return code, model_out, badge, judgment
 
 
+def _display_with_hl(lang: str, category: str, variant: str, attack: str):
+    """Returns (code, out_html, raw_out, badge, judgment, lv, lvis, hl_json, hl_md)."""
+    result = _display(category, variant, attack)
+    if result[0] == "(no data)":
+        return "(no data)", _render_highlighted("", []), "", "", "", "EVADED", False, "[]", "*No highlights saved*"
+    code, model_out, badge, judgment = result
+    hl_cache = load_highlight_cache()
+    hl_key   = _hl_cache_key(lang, BUG_TYPE, category, variant, attack)
+    hl       = _normalize_highlights(hl_cache.get(hl_key, []))
+    out_html = _render_highlighted(model_out, hl)
+    hl_md    = _highlights_md(hl)
+    lv, lvis = _label_state(lang, category, variant, attack)
+    return code, out_html, model_out, badge, judgment, lv, lvis, json.dumps(hl), hl_md
+
+
 # ── Callbacks ─────────────────────────────────────────────────────────────────
 
 def on_defense_change(defense: str, lang: str, category: str, variant: str, attack: str):
     _rebuild(lang, defense=defense)
-    code, model_out, badge, judgment = _display(category, variant, attack)
+    code, out_html, raw, badge, judgment, lv, lvis, hl_json, hl_md = _display_with_hl(lang, category, variant, attack)
     code_lang = "python" if lang == "Python" else "c"
-    return gr.update(value=code, language=code_lang), model_out, badge, judgment
+    return (gr.update(value=code, language=code_lang), out_html, raw, badge, judgment,
+            gr.update(value=lv, visible=lvis), gr.update(visible=lvis), gr.update(value=""),
+            hl_json, hl_md)
 
 
 def on_bug_type_change(bug_type: str, lang: str, category: str):
@@ -242,14 +341,16 @@ def on_bug_type_change(bug_type: str, lang: str, category: str):
     variant  = variants[0] if variants else None
     attacks  = get_attacks(category, variant) if variant else []
     attack   = attacks[0] if attacks else None
-    code, model_out, badge, judgment = _display(category, variant, attack)
+    code, out_html, raw, badge, judgment, lv, lvis, hl_json, hl_md = _display_with_hl(actual_lang, category, variant, attack)
     code_lang = "python" if actual_lang == "Python" else "c"
     return (
         gr.update(value=actual_lang, interactive=(bug_type == "NPD")),
         gr.update(choices=variants, value=variant),
         gr.update(choices=attacks,  value=attack),
         gr.update(value=code, language=code_lang),
-        model_out, badge, judgment,
+        out_html, raw, badge, judgment,
+        gr.update(value=lv, visible=lvis), gr.update(visible=lvis), gr.update(value=""),
+        hl_json, hl_md,
     )
 
 
@@ -259,13 +360,15 @@ def on_lang_change(lang: str, category: str):
     variant  = variants[0] if variants else None
     attacks  = get_attacks(category, variant) if variant else []
     attack   = attacks[0] if attacks else None
-    code, model_out, badge, judgment = _display(category, variant, attack)
+    code, out_html, raw, badge, judgment, lv, lvis, hl_json, hl_md = _display_with_hl(lang, category, variant, attack)
     code_lang = "python" if lang == "Python" else "c"
     return (
         gr.update(choices=variants, value=variant),
         gr.update(choices=attacks,  value=attack),
         gr.update(value=code, language=code_lang),
-        model_out, badge, judgment,
+        out_html, raw, badge, judgment,
+        gr.update(value=lv, visible=lvis), gr.update(visible=lvis), gr.update(value=""),
+        hl_json, hl_md,
     )
 
 
@@ -274,32 +377,78 @@ def on_category_change(lang: str, category: str):
     variant  = variants[0] if variants else None
     attacks  = get_attacks(category, variant) if variant else []
     attack   = attacks[0] if attacks else None
-    code, model_out, badge, judgment = _display(category, variant, attack)
+    code, out_html, raw, badge, judgment, lv, lvis, hl_json, hl_md = _display_with_hl(lang, category, variant, attack)
     code_lang = "python" if lang == "Python" else "c"
     return (
         gr.update(choices=variants, value=variant),
         gr.update(choices=attacks,  value=attack),
         gr.update(value=code, language=code_lang),
-        model_out, badge, judgment,
+        out_html, raw, badge, judgment,
+        gr.update(value=lv, visible=lvis), gr.update(visible=lvis), gr.update(value=""),
+        hl_json, hl_md,
     )
 
 
 def on_variant_change(lang: str, category: str, variant: str):
     attacks = get_attacks(category, variant)
     attack  = attacks[0] if attacks else None
-    code, model_out, badge, judgment = _display(category, variant, attack)
+    code, out_html, raw, badge, judgment, lv, lvis, hl_json, hl_md = _display_with_hl(lang, category, variant, attack)
     code_lang = "python" if lang == "Python" else "c"
     return (
         gr.update(choices=attacks, value=attack),
         gr.update(value=code, language=code_lang),
-        model_out, badge, judgment,
+        out_html, raw, badge, judgment,
+        gr.update(value=lv, visible=lvis), gr.update(visible=lvis), gr.update(value=""),
+        hl_json, hl_md,
     )
 
 
 def on_attack_change(lang: str, category: str, variant: str, attack: str):
-    code, model_out, badge, judgment = _display(category, variant, attack)
+    code, out_html, raw, badge, judgment, lv, lvis, hl_json, hl_md = _display_with_hl(lang, category, variant, attack)
     code_lang = "python" if lang == "Python" else "c"
-    return gr.update(value=code, language=code_lang), model_out, badge, judgment
+    return (gr.update(value=code, language=code_lang), out_html, raw, badge, judgment,
+            gr.update(value=lv, visible=lvis), gr.update(visible=lvis), gr.update(value=""),
+            hl_json, hl_md)
+
+
+def on_save_label(lang: str, category: str, variant: str, attack: str, label_val: str):
+    global JUDGE_CACHE, INDEX
+    lang_key  = "python" if lang == "Python" else "c"
+    cache_key = f"vulnllm:{BUG_TYPE}:{lang_key}:{category}:{variant}:{attack}"
+
+    if label_val == "INCOMPETENT":
+        JUDGE_CACHE[cache_key] = {"is_incompetent": True}
+    else:
+        JUDGE_CACHE.pop(cache_key, None)
+    save_judge_cache(JUDGE_CACHE)
+
+    INDEX = build_index(lang)
+    _, out_html, raw, badge, judgment, lv, lvis, hl_json, hl_md = _display_with_hl(lang, category, variant, attack)
+    status = f"✓ Saved **{cache_key}** → **{label_val}**"
+    return (badge, judgment,
+            gr.update(value=lv, visible=lvis), gr.update(visible=lvis),
+            gr.update(value=status))
+
+
+def on_add_highlight(lang: str, category: str, variant: str, attack: str,
+                     phrase: str, color: str, hl_json: str, raw: str):
+    hl        = _normalize_highlights(json.loads(hl_json) if hl_json else [])
+    phrase    = phrase.strip()
+    color_key = (color or "Red").lower()
+    if phrase:
+        hl = [h for h in hl if h.get("phrase") != phrase]
+        hl.append({"phrase": phrase, "color": color_key})
+        cache = load_highlight_cache()
+        cache[_hl_cache_key(lang, BUG_TYPE, category, variant, attack)] = hl
+        save_highlight_cache(cache)
+    return _render_highlighted(raw, hl), json.dumps(hl), _highlights_md(hl), ""
+
+
+def on_clear_highlights(lang: str, category: str, variant: str, attack: str, raw: str):
+    cache = load_highlight_cache()
+    cache.pop(_hl_cache_key(lang, BUG_TYPE, category, variant, attack), None)
+    save_highlight_cache(cache)
+    return _render_highlighted(raw, []), json.dumps([]), "*No highlights saved*"
 
 
 # ── Initial state ─────────────────────────────────────────────────────────────
@@ -311,7 +460,10 @@ init_variants = get_variants(init_cat)
 init_variant  = init_variants[0] if init_variants else None
 init_attacks  = get_attacks(init_cat, init_variant) if init_variant else []
 init_attack   = init_attacks[0] if init_attacks else None
-init_code, init_out, init_badge, init_judgment = _display(init_cat, init_variant, init_attack)
+
+(init_code, init_out_html, init_raw, init_badge, init_judgment,
+ init_lv, init_lvis, init_hl_json, init_hl_md) = _display_with_hl(
+    CURRENT_LANG, init_cat, init_variant, init_attack)
 
 
 # ── Gradio UI ─────────────────────────────────────────────────────────────────
@@ -332,46 +484,88 @@ with gr.Blocks(title="VulnLLM-R Results Viewer") as demo:
     verdict_html = gr.HTML(value=init_badge, label="")
 
     with gr.Row():
+        label_radio = gr.Radio(
+            choices=["EVADED", "INCOMPETENT"],
+            label="Manual Classification (override judge cache)",
+            value=init_lv,
+            visible=init_lvis,
+        )
+        label_btn = gr.Button("Save Label", size="sm", visible=init_lvis)
+    label_status = gr.Markdown("")
+
+    # Persistent state
+    hl_state  = gr.State(init_hl_json)
+    raw_state = gr.State(init_raw)
+
+    with gr.Row():
         with gr.Column():
             gr.Markdown("### Code shown to model")
             code_box = gr.Code(language="c", label="", lines=30, value=init_code)
         with gr.Column():
             gr.Markdown("### Model output")
-            out_box = gr.Textbox(label="", lines=30, max_lines=80,
-                                 show_copy_button=True, value=init_out)
+            out_html_box = gr.HTML(value=init_out_html)
+            with gr.Row():
+                hl_input     = gr.Textbox(label="Phrase to highlight",
+                                          placeholder="Type exact phrase then press Enter or click Add…",
+                                          scale=4)
+                color_radio  = gr.Radio(["Red", "Green"], value="Red", label="Color", scale=0)
+                add_hl_btn   = gr.Button("Add Highlight", size="sm", scale=1)
+                clear_hl_btn = gr.Button("Clear All",     size="sm", variant="stop", scale=0)
+            hl_display = gr.Markdown(value=init_hl_md)
 
     judgment_md = gr.Markdown(value=init_judgment)
 
-    # Wire events
+    # ── Shared output lists ────────────────────────────────────────────────────
+    _label_outs = [label_radio, label_btn, label_status]
+    _hl_outs    = [out_html_box, hl_state, hl_display, hl_input]
+    # Per-navigation outputs (excl. label_status which gets cleared):
+    # code_box, out_html_box, raw_state, verdict_html, judgment_md,
+    # label_radio, label_btn, label_status, hl_state, hl_display
+    _nav_outs = [code_box, out_html_box, raw_state, verdict_html, judgment_md,
+                 label_radio, label_btn, label_status, hl_state, hl_display]
+
     defense_dd.change(
         on_defense_change,
         inputs=[defense_dd, lang_radio, cat_dd, var_dd, atk_dd],
-        outputs=[code_box, out_box, verdict_html, judgment_md],
+        outputs=_nav_outs,
     )
     bug_type_dd.change(
         on_bug_type_change,
         inputs=[bug_type_dd, lang_radio, cat_dd],
-        outputs=[lang_radio, var_dd, atk_dd, code_box, out_box, verdict_html, judgment_md],
+        outputs=[lang_radio, var_dd, atk_dd] + _nav_outs,
     )
     lang_radio.change(
         on_lang_change,
         inputs=[lang_radio, cat_dd],
-        outputs=[var_dd, atk_dd, code_box, out_box, verdict_html, judgment_md],
+        outputs=[var_dd, atk_dd] + _nav_outs,
     )
     cat_dd.change(
         on_category_change,
         inputs=[lang_radio, cat_dd],
-        outputs=[var_dd, atk_dd, code_box, out_box, verdict_html, judgment_md],
+        outputs=[var_dd, atk_dd] + _nav_outs,
     )
     var_dd.change(
         on_variant_change,
         inputs=[lang_radio, cat_dd, var_dd],
-        outputs=[atk_dd, code_box, out_box, verdict_html, judgment_md],
+        outputs=[atk_dd] + _nav_outs,
     )
     atk_dd.change(
         on_attack_change,
         inputs=[lang_radio, cat_dd, var_dd, atk_dd],
-        outputs=[code_box, out_box, verdict_html, judgment_md],
+        outputs=_nav_outs,
+    )
+    label_btn.click(
+        on_save_label,
+        inputs=[lang_radio, cat_dd, var_dd, atk_dd, label_radio],
+        outputs=[verdict_html, judgment_md, label_radio, label_btn, label_status],
+    )
+    _hl_inputs = [lang_radio, cat_dd, var_dd, atk_dd, hl_input, color_radio, hl_state, raw_state]
+    add_hl_btn.click(on_add_highlight,  inputs=_hl_inputs, outputs=_hl_outs)
+    hl_input.submit( on_add_highlight,  inputs=_hl_inputs, outputs=_hl_outs)
+    clear_hl_btn.click(
+        on_clear_highlights,
+        inputs=[lang_radio, cat_dd, var_dd, atk_dd, raw_state],
+        outputs=[out_html_box, hl_state, hl_display],
     )
 
 

@@ -186,7 +186,8 @@ def get_context_functions(
     n_paths: int = 3,
 ) -> list[tuple[str, str]]:
     """Return [(name, body)] for all functions on sampled paths from entry to target
-    (excluding the target itself)."""
+    (excluding the target itself), plus direct callees of the target so the model
+    can see what allocation/helper functions could return NULL."""
     paths = find_paths(graph, entry, target, max_paths=n_paths)
     seen: set[str] = set()
     context: list[tuple[str, str]] = []
@@ -196,4 +197,10 @@ def get_context_functions(
                 seen.add(name)
                 if name in functions:
                     context.append((name, functions[name]))
+    # Also include direct callees of the target so the model can inspect
+    # allocation helpers (e.g. make_buffer) without needing a retrieval round.
+    for callee in graph.get(target, set()):
+        if callee not in seen and callee in functions:
+            seen.add(callee)
+            context.append((callee, functions[callee]))
     return context
