@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run all VulnLLM-R evaluations: C/NPD × {clean,dpi,context_aware} × policy
+# Run all VulnLLM-R evaluations: C/NPD × {safe,buggy,dpi,context_aware} × policy
 # Variants split across GPU 2 (creatend, mkbuf) and GPU 3 (findrec, allocate) in parallel.
 
 _DATASET_ROOT="${VL_DATASET_PREFIX:-/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets}"
@@ -10,7 +10,7 @@ MODEL="UCSB-SURFI/VulnLLM-R-7B"
 
 VARIANTS_GPU2="creatend mkbuf"
 VARIANTS_GPU3="findrec allocate"
-CATEGORIES="clean dpi context_aware"
+CATEGORIES="${CATEGORIES:-safe buggy dpi context_aware}"
 
 cd /mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R
 source .venv/bin/activate

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run VulnLLM-R evaluations: Python/NPD × {clean,dpi,context_aware} × policy
+# Run VulnLLM-R evaluations: Python/NPD × {safe,buggy,dpi,context_aware} × policy
 # 4 variants split across 2 GPUs in parallel (2 variants per GPU).
 
 _DATASET_ROOT="${VL_DATASET_PREFIX:-/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/datasets}"
@@ -8,7 +8,7 @@ _RESULTS_ROOT="${VL_RESULT_PREFIX:-results}"
 RESULTS_BASE="/mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R/${_RESULTS_ROOT}/Python/NPD"
 MODEL="UCSB-SURFI/VulnLLM-R-7B"
 
-CATEGORIES="clean dpi context_aware"
+CATEGORIES="${CATEGORIES:-safe buggy dpi context_aware}"
 
 cd /mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R
 source .venv/bin/activate

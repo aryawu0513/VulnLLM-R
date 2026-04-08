@@ -10,7 +10,7 @@ MODEL="UCSB-SURFI/VulnLLM-R-7B"
 
 VARIANTS_GPU2="creatend mkbuf"
 VARIANTS_GPU3="findrec allocate"
-CATEGORIES="annotated_clean annotated_dpi annotated_context_aware"
+CATEGORIES="${CATEGORIES:-annotated_safe annotated_buggy annotated_dpi annotated_context_aware}"
 
 cd /mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R
 source .venv/bin/activate

@@ -10,7 +10,7 @@ MODEL="UCSB-SURFI/VulnLLM-R-7B"
 
 VARIANTS_GPU2="freeitem dropconn"
 VARIANTS_GPU3="relogger rmentry"
-CATEGORIES="clean dpi context_aware"
+CATEGORIES="${CATEGORIES:-safe buggy context_aware}"
 
 cd /mnt/ssd/aryawu/redteaming_repoaudit/VulnLLM-R
 source .venv/bin/activate
