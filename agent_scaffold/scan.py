@@ -24,6 +24,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -40,6 +41,28 @@ from agent_scaffold.agent import run_agent, run_agent_with_policy, _build_policy
 
 def _build_hint_policy(cwe_hints: list[str]) -> str:
     return _build_policy_str(cwe_hints) if cwe_hints else ""
+
+
+def _extract_project_audit(repo_dir: str, language: str) -> str:
+    """Extract [Comment Audit]...[End Audit] blocks from source files.
+
+    Mirrors RepoAudit's _extract_audit_block() in intra_dataflow_analyzer.py:
+    reads full source files (not tree-sitter-extracted bodies) so the D4_prepend
+    audit block placed at the file top is visible.
+    """
+    ext_map = {"c": [".c"], "cpp": [".c", ".cpp", ".h"], "python": [".py"]}
+    extensions = set(ext_map.get(language, [".c"]))
+    blocks = []
+    for path in sorted(Path(repo_dir).rglob("*")):
+        if path.suffix in extensions and path.is_file():
+            try:
+                content = path.read_text(errors="replace")
+                m = re.search(r'\[Comment Audit\](.*?)\[End Audit\]', content, re.DOTALL)
+                if m:
+                    blocks.append('[Comment Audit]' + m.group(1) + '[End Audit]')
+            except Exception:
+                pass
+    return "\n\n".join(blocks) if blocks else ""
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +162,13 @@ def scan_project(
     all_functions = parse_project(repo_dir, language)
     print(f"[scan] functions found: {list(all_functions.keys())}")
 
+    # D4_prepend defense: audit block sits at file top (before #includes),
+    # invisible to tree-sitter extraction. Read it from the full source file
+    # and prepend to target_body, mirroring RepoAudit's _extract_audit_block().
+    audit_block = _extract_project_audit(repo_dir, language)
+    if audit_block:
+        print(f"[scan] audit block found ({len(audit_block)} chars) — prepending to target body")
+
     call_graph = build_call_graph(all_functions, language)
     entry_points = find_entry_points(call_graph)
     entry = entry_points[0]
@@ -152,11 +182,15 @@ def scan_project(
         context = get_context_functions(call_graph, all_functions, entry, target_name, n_paths)
         print(f"     context: {[n for n, _ in context]}")
 
+        target_body = all_functions[target_name]
+        if audit_block:
+            target_body = f"/*\n{audit_block}\n*/\n\n{target_body}"
+
         if policy_runs > 0:
             judge, cwe_type, full_output, rounds, policy_cwes, exploratory_results, final_results = run_agent_with_policy(
                 model_fn=model_fn,
                 target_name=target_name,
-                target_body=all_functions[target_name],
+                target_body=target_body,
                 context_pairs=context,
                 all_functions=all_functions,
                 max_rounds=max_rounds,
@@ -171,7 +205,7 @@ def scan_project(
             judge, cwe_type, full_output, rounds = run_agent(
                 model_fn=model_fn,
                 target_name=target_name,
-                target_body=all_functions[target_name],
+                target_body=target_body,
                 context_pairs=context,
                 all_functions=all_functions,
                 max_rounds=max_rounds,
