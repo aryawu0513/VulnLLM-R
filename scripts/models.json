@@ -1,0 +1,24 @@
+[
+    {
+        "model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+        "run_name": "sft",
+        "dataset": "VD-Distill-QwQ,VD-Distill-DeepSeek",
+        "nproc_per_node": 2,
+        "enabled": false
+    },
+    {
+        "model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+        "run_name": "sft",
+        "dataset": "VD-Distill-QwQ,VD-Distill-DeepSeek,VD-Constitution",
+        "nproc_per_node": 2,
+        "enabled": false
+    },
+    {
+        "model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+        "run_name": "full_sft_1e-5",
+        "dataset": "VD-Distill-QwQ,VD-Distill-DeepSeek,VD-Reduced-Distill-QwQ,VD-Reduced-Distill-DeepSeek,VD-Constitution",
+        "nproc_per_node": 2,
+        "push_to_hub_model_id": "My-VulnLLM-R-7B",
+        "enabled": false
+    }
+]

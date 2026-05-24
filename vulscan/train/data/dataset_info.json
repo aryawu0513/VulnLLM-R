@@ -1,0 +1,126 @@
+{
+    "VD-Distill-QwQ": {
+        "hf_hub_url": "https://huggingface.co/datasets/UCSB-SURFI/Distill-QwQ",
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "system": "system"
+        },
+        "tags": {
+            "role_tag": "from",
+            "content_tag": "value",
+            "user_tag": "user",
+            "assistant_tag": "assistant"
+        }
+    },
+    "VD-Distill-DeepSeek": {
+        "hf_hub_url": "https://huggingface.co/datasets/UCSB-SURFI/Distill-DeepSeek",
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "system": "system"
+        },
+        "tags": {
+            "role_tag": "from",
+            "content_tag": "value",
+            "user_tag": "user",
+            "assistant_tag": "assistant"
+        }
+    },
+    "VD-Reduced-Distill-QwQ": {
+        "hf_hub_url": "https://huggingface.co/datasets/UCSB-SURFI/Reduced-Distill-QwQ",
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "system": "system"
+        },
+        "tags": {
+            "role_tag": "from",
+            "content_tag": "value",
+            "user_tag": "user",
+            "assistant_tag": "assistant"
+        }
+    },
+    "VD-Reduced-Distill-DeepSeek": {
+        "hf_hub_url": "https://huggingface.co/datasets/UCSB-SURFI/Reduced-Distill-DeepSeek",
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "system": "system"
+        },
+        "tags": {
+            "role_tag": "from",
+            "content_tag": "value",
+            "user_tag": "user",
+            "assistant_tag": "assistant"
+        }
+    },
+    "VD-Constitution": {
+        "hf_hub_url": "https://huggingface.co/datasets/UCSB-SURFI/Constitution",
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "system": "system"
+        },
+        "tags": {
+            "role_tag": "from",
+            "content_tag": "value",
+            "user_tag": "user",
+            "assistant_tag": "assistant"
+        }
+    },
+    "Sky-T1-HF": {
+        "hf_hub_url": "NovaSky-AI/Sky-T1_data_17k",
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "system": "system"
+        },
+        "tags": {
+            "role_tag": "from",
+            "content_tag": "value",
+            "user_tag": "user",
+            "assistant_tag": "assistant"
+        }
+    },
+    "Sky-T1-Filtered": {
+        "hf_hub_url": "secmlr/Sky-T1_data_17k_filtered",
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "system": "system"
+        },
+        "tags": {
+            "role_tag": "from",
+            "content_tag": "value",
+            "user_tag": "user",
+            "assistant_tag": "assistant"
+        }
+    },
+    "Sky-T1-simpo-HF": {
+        "hf_hub_url": "NovaSky-AI/Sky-T1_preference_data_10k",
+        "ranking": true,
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "chosen": "chosen",
+            "rejected": "rejected"
+        }
+    },
+    "Sky-Simpo": {
+        "hf_hub_url": "secmlr/Sky-T1_preference_data_10k_filtered",
+        "ranking": true,
+        "formatting": "sharegpt",
+        "columns": {
+            "messages": "conversations",
+            "chosen": "chosen",
+            "rejected": "rejected"
+        }
+    },
+    "WebInstruct-CFT-4K": {
+        "file_name": "WebInstruct-CFT-4K.json"
+    },
+    "WebInstruct-CFT-50K": {
+        "file_name": "WebInstruct-CFT-50K.json"
+    }
+}
