@@ -183,7 +183,7 @@ def load_reasoning_data(
     data_num = 0
     input_dir_orig = input_dir
     for language in ood_cwe_dict.keys():
-        input_dir = os.path.join(input_dir_orig, language)
+        input_dir = input_dir_orig
         cwe_count = 0
         for json_file in sorted(glob.glob(os.path.join(input_dir, "*.json"))):
             print(f"processing: {json_file}")

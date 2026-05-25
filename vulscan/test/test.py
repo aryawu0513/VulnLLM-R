@@ -339,7 +339,7 @@ if __name__ == "__main__":
     # wandb
     for dataset_path in args.dataset_path:
         for language in args.language:
-            if not os.path.exists(os.path.join(dataset_path, language)):
+            if not os.path.exists(dataset_path):
                 continue
             name = args.output_dir.split("/")[-1]
             # data
@@ -734,7 +734,7 @@ if __name__ == "__main__":
                                 # Find the original data for this example
                                 original_data = None
                                 for json_file in glob.glob(
-                                    os.path.join(dataset_path, language, "CWE-*.json")
+                                    os.path.join(dataset_path, "CWE-*.json")
                                 ):
                                     with open(json_file, "r", encoding="utf-8") as f:
                                         data = json.load(f)
