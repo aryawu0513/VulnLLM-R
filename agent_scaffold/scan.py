@@ -25,7 +25,9 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -273,12 +275,21 @@ def main():
                     help="Pre-seed the policy with these CWEs (e.g. --cwe-hint CWE-476). "
                          "Merged with CWEs collected from exploratory runs.")
     ap.add_argument("--max-tokens", type=int, default=4096)
-    ap.add_argument("--output", help="Save JSON results to file")
+    ap.add_argument("--output", help="Save JSON results to file (single --repo run)")
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument(
         "--demo",
         action="store_true",
         help="Run all demo_repo variants and print comparison table",
+    )
+    ap.add_argument(
+        "--dataset",
+        help="Path to a directory of source files; scan each top-level source file in "
+             "isolation (one tempdir per file). Use with --output-dir.",
+    )
+    ap.add_argument(
+        "--output-dir",
+        help="Output dir for --dataset mode: writes one <stem>.json per source file scanned.",
     )
 
     mg = ap.add_mutually_exclusive_group(required=True)
@@ -324,9 +335,40 @@ def main():
                 json.dump(all_results, f, indent=2)
             print(f"\nResults saved to {args.output}")
 
-    else:
-        if not args.repo:
-            ap.error("--repo is required unless --demo is used")
+    elif args.dataset:
+        if not args.output_dir:
+            ap.error("--dataset requires --output-dir")
+        ds = Path(args.dataset)
+        if not ds.is_dir():
+            ap.error(f"--dataset must be a directory: {ds}")
+        out = Path(args.output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+
+        ext_map = {"c": [".c"], "cpp": [".c", ".cpp", ".h"], "python": [".py"]}
+        extensions = set(ext_map.get(args.language, [".c"]))
+        files = sorted(p for p in ds.iterdir() if p.is_file() and p.suffix in extensions)
+        if not files:
+            print(f"[dataset] {ds}: no {args.language} source files found")
+            return
+        print(f"[dataset] {ds}: scanning {len(files)} file(s) → {out}")
+
+        for src in files:
+            out_file = out / f"{src.stem}.json"
+            if out_file.exists():
+                print(f"  [skip] {src.name} — {out_file} exists")
+                continue
+            print(f"\n  [scan] {src.name}")
+            with tempfile.TemporaryDirectory() as tmp:
+                shutil.copy(src, Path(tmp) / src.name)
+                results = scan_project(
+                    tmp, args.language, model_fn,
+                    args.n_paths, args.max_rounds, args.policy_runs,
+                    model_fn_diverse, args.target, args.cwe_hints, args.verbose,
+                )
+            out_file.write_text(json.dumps(results, indent=2))
+            print(f"     → {out_file}")
+
+    elif args.repo:
         results = scan_project(
             args.repo, args.language, model_fn,
             args.n_paths, args.max_rounds, args.policy_runs,
@@ -338,6 +380,9 @@ def main():
             with open(args.output, "w") as f:
                 json.dump(results, f, indent=2)
             print(f"\nResults saved to {args.output}")
+
+    else:
+        ap.error("one of --repo, --dataset, or --demo is required")
 
 
 if __name__ == "__main__":
