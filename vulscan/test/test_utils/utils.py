@@ -194,7 +194,7 @@ def load_reasoning_data(
                 with open(json_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 # select data that is "dataset": "primevul_pair"; only for c
-                if "noisy_dataset" in input_dir:
+                if "noisy_dataset" in str(input_dir):
                     data = [item for item in data if item["dataset"] == "primevul_pair"]
                 # selected_samples = select_diverse_samples(data)
 
