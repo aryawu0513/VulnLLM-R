@@ -868,7 +868,13 @@ if __name__ == "__main__":
                     abs_output_dir = os.path.abspath(args.output_dir)
                     print(f"[DEBUG] saving to abs path: {abs_output_dir}")
                     os.makedirs(abs_output_dir, exist_ok=True)
-                    rel_path = str(dataset_path.relative_to(PROJECT_PATH))
+                    try:
+                        rel_path = str(dataset_path.relative_to(PROJECT_PATH))
+                    except ValueError:
+                        # dataset lives outside the VulnLLM-R project (e.g. a
+                        # repo-level benchmark/ tree); use last two segments to
+                        # keep the output filename readable.
+                        rel_path = "_".join(dataset_path.parts[-2:])
                     dataset_name = rel_path.replace("/", "_")
                     model_name_parts = args.model.split("/")
                     if len(model_name_parts) > 2:
