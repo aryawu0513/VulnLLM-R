@@ -79,7 +79,10 @@ def extract_functions(source: str, language: str = "c") -> dict[str, str]:
             visit(child)
 
     visit(tree.root_node)
-    return functions
+    # tree-sitter-c parses 'namespace Foo { ... }' as a function_definition because
+    # 'namespace' is not a C keyword. Filter these out: real C/C++ functions never
+    # have a body whose text starts with 'namespace'.
+    return {k: v for k, v in functions.items() if not v.lstrip().startswith("namespace")}
 
 
 def extract_calls(func_body: str, language: str = "c") -> set[str]:
