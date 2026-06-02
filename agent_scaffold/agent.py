@@ -252,4 +252,9 @@ def run_agent_with_policy(
     detected = [r["cwe"] for r in final_results if r["judge"] == "yes"]
     overall_judge = "yes" if detected else "no"
     overall_cwe = ", ".join(detected) if detected else "N/A"
-    return overall_judge, overall_cwe, "", 0, dict(collected), exploratory_results, final_results
+    # Surface reasoning and rounds from the first detected CWE's final run,
+    # or the first final run if none detected.
+    primary = next((r for r in final_results if r["judge"] == "yes"), None) or (final_results[0] if final_results else {})
+    overall_output = primary.get("output", "")
+    overall_rounds = primary.get("rounds_used", 0)
+    return overall_judge, overall_cwe, overall_output, overall_rounds, dict(collected), exploratory_results, final_results
