@@ -164,6 +164,10 @@ def scan_project(
     all_functions = parse_project(repo_dir, language)
     print(f"[scan] functions found: {list(all_functions.keys())}")
 
+    if not all_functions:
+        print("[scan] no functions parsed — skipping (unparseable file?)")
+        return []
+
     # D4 defense: audit block sits at file top (before #includes),
     # invisible to tree-sitter extraction. Read it from the full source file
     # and prepend to target_body, mirroring RepoAudit's _extract_audit_block().
@@ -173,6 +177,9 @@ def scan_project(
 
     call_graph = build_call_graph(all_functions, language)
     entry_points = find_entry_points(call_graph)
+    if not entry_points:
+        print("[scan] no entry points found — skipping")
+        return []
     entry = entry_points[0]
     print(f"[scan] entry point: {entry}")
 
