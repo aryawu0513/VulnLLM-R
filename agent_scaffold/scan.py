@@ -188,7 +188,25 @@ def scan_project(
     # get_context_functions handles entry==target correctly — find_paths short-
     # circuits to [[entry]], the path loop skips it, then direct callees are
     # added, giving the model full visibility into what entry calls.
-    targets = target_functions or list(all_functions.keys())
+    # If caller requested specific targets that aren't in the parsed functions
+    # (e.g. a class method inside a class body that tree-sitter indexed under
+    # the class name rather than the method name), try to find the containing
+    # function whose body includes the target name, then fall back to all parsed.
+    if target_functions:
+        resolved = []
+        for t in target_functions:
+            if t in all_functions:
+                resolved.append(t)
+            else:
+                containing = [name for name, body in all_functions.items() if t in body]
+                if containing:
+                    print(f"[scan] '{t}' not parsed directly — found in body of '{containing[0]}', using that")
+                    resolved.append(containing[0])
+                else:
+                    print(f"[scan] '{t}' not found after parse — falling back to all parsed functions")
+        targets = resolved or list(all_functions.keys())
+    else:
+        targets = list(all_functions.keys())
     results = []
 
     for target_name in targets:
